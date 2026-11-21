@@ -1,0 +1,38 @@
+---
+import type { TahunLibur } from '../data/libur';
+
+interface Props {
+  t: TahunLibur;
+}
+const { t } = Astro.props;
+
+const fmt = new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+const tanggal = (iso: string) => fmt.format(new Date(`${iso}T00:00:00Z`));
+const ditetapkan = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+  new Date(`${t.ditetapkan}T00:00:00Z`),
+);
+---
+
+<table class="table">
+  <thead>
+    <tr><th class="w-40 sm:w-56">Tanggal</th><th>Keterangan</th><th class="w-28 hidden sm:table-cell">Jenis</th></tr>
+  </thead>
+  <tbody>
+    {
+      t.data.map((d) => (
+        <tr data-date={d.tanggal}>
+          <td class="sm:whitespace-nowrap">{tanggal(d.tanggal)}</td>
+          <td>{d.nama}</td>
+          <td class:list={['text-sm hidden sm:table-cell', d.jenis === 'cuti' ? 'text-mute' : 'font-medium']}>
+            {d.jenis === 'cuti' ? 'Cuti bersama' : 'Libur'}
+          </td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+<p class="t-small mt-3">
+  Dasar: {t.dasar}, ditetapkan {ditetapkan}.{' '}
+  <a class="link" href={t.sumber} target="_blank" rel="noopener noreferrer">Sumber setneg.go.id</a>
+  {t.catatan && <> {t.catatan}</>}
+</p>

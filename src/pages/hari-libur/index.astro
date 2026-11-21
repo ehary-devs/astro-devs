@@ -1,0 +1,101 @@
+---
+import Tool from '../../layouts/Tool.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import { LIBUR } from '../../data/libur';
+
+const latest = LIBUR[LIBUR.length - 1];
+const years = LIBUR.slice().reverse();
+
+const fetchJs = `const res = await fetch('https://devs.web.id/api/libur/${latest.tahun}.json');
+const { data } = await res.json();
+// data: [{ tanggal: "${latest.data[0].tanggal}", nama: "${latest.data[0].nama}", jenis: "libur" }, ...]
+
+const libur = new Set(data.filter((d) => d.jenis === 'libur').map((d) => d.tanggal));
+
+// Hari kerja: bukan Sabtu/Minggu dan bukan libur nasional.
+// Cuti bersama di contoh ini tetap dihitung hari kerja; sesuaikan dengan kebijakan kantor kamu.
+function hariKerja(iso) {
+  const day = new Date(iso + 'T00:00:00Z').getUTCDay();
+  return day !== 0 && day !== 6 && !libur.has(iso);
+}`;
+---
+
+<Tool
+  slug="hari-libur"
+  title="Hari libur nasional Indonesia: JSON API dan kalender .ics"
+  heading="Hari libur nasional Indonesia"
+  description={`Libur nasional dan cuti bersama ${LIBUR.map((t) => t.tahun).join(' dan ')} sesuai SKB 3 Menteri. JSON API gratis dan kalender .ics untuk Google Calendar, Outlook, dan Apple Calendar.`}
+  lead="Libur nasional dan cuti bersama disalin langsung dari SKB 3 Menteri, dengan cuti bersama ditandai terpisah. Pilih tahun, pakai JSON-nya di aplikasi, atau langganan kalendernya."
+>
+  <p id="next" class="text-lg" hidden></p>
+
+  <section class="mt-10">
+    <h2 class="t-h2">Pilih tahun</h2>
+    <ul class="mt-5 border-t border-ink">
+      {
+        years.map((t) => (
+          <li class="border-b border-line">
+            <a href={`/hari-libur/${t.tahun}/`} class="group grid gap-1 py-4 sm:grid-cols-[6rem_1fr] sm:items-baseline sm:gap-6">
+              <span class="t-h3 group-hover:underline underline-offset-4">{t.tahun}</span>
+              <span class="text-ink-2">
+                {t.data.filter((d) => d.jenis === 'libur').length} hari libur, {t.data.filter((d) => d.jenis === 'cuti').length} hari cuti bersama
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="mt-14">
+    <h2 class="t-h2">Kalender .ics</h2>
+    <p class="mt-2 text-ink-2 max-w-xl">Berisi semua tahun yang tersedia dan ikut bertambah saat tahun baru ditambahkan.</p>
+    <div class="mt-5 flex flex-wrap gap-3">
+      <a class="btn" href="/kalender/libur-indonesia.ics">Libur + cuti bersama</a>
+      <a class="btn btn-ghost" href="/kalender/libur-nasional.ics">Libur nasional saja</a>
+    </div>
+  </section>
+
+  <section class="mt-14 space-y-5">
+    <h2 class="t-h2">Pakai di aplikasi</h2>
+    <p class="text-ink-2 max-w-xl">
+      Endpoint: <code>/api/libur/{'{tahun}'}.json</code> per tahun, atau <code>/api/libur.json</code> untuk semua tahun.
+      Tanggal memakai format ISO <code>YYYY-MM-DD</code>. Field <code>jenis</code> berisi <code>libur</code> atau <code>cuti</code>.
+    </p>
+    <CodeBlock label="JavaScript" code={fetchJs} />
+  </section>
+
+
+  <Fragment slot="aside">
+    <section>
+      <h2 class="t-h3">Cara langganan kalender</h2>
+      <p class="mt-3 text-ink-2">
+        Google Calendar: Setelan, Tambahkan kalender, Dari URL, lalu tempel
+        <code class="break-all">https://devs.web.id/kalender/libur-indonesia.ics</code>.
+      </p>
+    </section>
+    <section>
+      <h2 class="t-h3">Pembaruan</h2>
+      <p class="mt-3 text-ink-2">Tahun berikutnya ditambahkan setelah SKB terbit, biasanya September. Halaman tahun lama tetap tersedia.</p>
+    </section>
+  </Fragment>
+</Tool>
+
+<script>
+  // Libur berikutnya dari API statis yang sama (tabel lengkap ada di halaman per tahun).
+  type Row = { tanggal: string; nama: string };
+  const el = document.querySelector<HTMLElement>('#next')!;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const fmt = new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  fetch('/api/libur.json')
+    .then((r) => r.json())
+    .then(({ data }: { data: { data: Row[] }[] }) => {
+      const next = data.flatMap((t) => t.data).find((d) => d.tanggal >= today);
+      if (!next) return;
+      const days = Math.round((Date.parse(next.tanggal) - Date.parse(today)) / 86400000);
+      el.textContent = `${days === 0 ? 'Hari ini' : `${days} hari lagi`}: ${next.nama}, ${fmt.format(new Date(`${next.tanggal}T00:00:00Z`))}.`;
+      el.hidden = false;
+    })
+    .catch(() => {});
+</script>

@@ -1,0 +1,30 @@
+{
+  "dasar_hukum": [
+    "Keputusan Menteri Dalam Negeri Nomor 300.2.2-2138 Tahun 2025 tentang Pemberian dan Pemutakhiran Kode, Data Wilayah Administrasi Pemerintahan, dan Pulau (25 April 2025)",
+    "Keputusan Menteri Dalam Negeri Nomor 300.2.2-2430 Tahun 2025 tentang Perubahan atas Keputusan Menteri Dalam Negeri Nomor 300.2.2-2138 Tahun 2025 (23 Juni 2025)"
+  ],
+  "jumlah": {
+    "provinsi": 38,
+    "kabupaten": 416,
+    "kota": 98,
+    "kabkota": 514,
+    "kecamatan": 7285,
+    "kelurahan": 8496,
+    "desa": 75266,
+    "desakel": 83762
+  },
+  "expected": [
+    38,
+    514,
+    7285,
+    83762
+  ],
+  "sumber": {
+    "Kepmen-300.2.2-2138-2025.pdf": "f403c4b2159054e4556624d8f3724a27ea2ac2281916d21768d3d776434f2c56",
+    "Kepmen-300.2.2-2430-2025.pdf": "3ef2790683ccddd8bde7b048c6fcef72e10b9189eaf7104c1d55188f51ebc5ab",
+    "Lampiran-Kepmen-300.2.2-2138-2025.pdf": "ac13b5a57358fcec0503429bb06b2d6b4e5572f65fd0162979b87a79863b1de6"
+  },
+  "perubahan_diterapkan": [
+    "2430.csv"
+  ]
+}

@@ -1,0 +1,112 @@
+---
+import Tool from '../../layouts/Tool.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import Icon from '../../components/Icon.astro';
+
+const regex = `// Pola dasar NIK: 16 digit, tanggal 01-31 (laki-laki) atau 41-71 (perempuan), bulan 01-12
+const NIK = /^\\d{6}(0[1-9]|[12]\\d|3[01]|4[1-9]|[56]\\d|7[01])(0[1-9]|1[0-2])\\d{2}\\d{4}$/;
+
+NIK.test('3374011708900001'); // true
+NIK.test('3374013508900001'); // false: tanggal 35`;
+---
+
+<Tool
+  slug="nik"
+  title="Cek format NIK: kode wilayah, tanggal lahir, jenis kelamin"
+  description="Baca isi 16 digit NIK: provinsi, kabupaten/kota, kecamatan (data Kepmendagri 2025), tanggal lahir, dan jenis kelamin. Diproses di browser, tidak disimpan."
+  lead="Masukkan 16 digit NIK. Halaman ini membaca strukturnya sesuai PP 40/2019 Pasal 31. NIK tidak dikirim ke mana pun."
+>
+  <div class="panel">
+    <form class="max-w-md" novalidate>
+      <label class="label" for="nik-in">NIK</label>
+      <div class="field-wrap">
+        <Icon name="id" class="field-icon" />
+        <input id="nik-in" class="field text-lg tracking-wider" inputmode="numeric" maxlength="24" autocomplete="off" spellcheck="false" placeholder="337401 170890 0001" aria-describedby="nik-hint" />
+      </div>
+      <p id="nik-hint" class="t-small mt-2">Spasi ditambahkan otomatis: kode wilayah, tanggal lahir, nomor urut.</p>
+    </form>
+    <div id="nik-out" class="panel-out space-y-4" aria-live="polite"></div>
+  </div>
+
+  <section class="mt-16 max-w-2xl">
+    <h2 class="t-h2">Struktur 16 digit NIK</h2>
+    <table class="table mt-5">
+      <thead><tr><th>Digit</th><th>Isi</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">1-2</td><td>Kode provinsi</td></tr>
+        <tr><td class="mono">3-4</td><td>Kode kabupaten/kota</td></tr>
+        <tr><td class="mono">5-6</td><td>Kode kecamatan tempat tinggal saat NIK dibuat</td></tr>
+        <tr><td class="mono">7-8</td><td>Tanggal lahir. Untuk perempuan ditambah 40, jadi tanggal 17 ditulis 57.</td></tr>
+        <tr><td class="mono">9-10</td><td>Bulan lahir</td></tr>
+        <tr><td class="mono">11-12</td><td>Dua digit terakhir tahun lahir</td></tr>
+        <tr><td class="mono">13-16</td><td>Nomor urut yang diberikan otomatis oleh SIAK</td></tr>
+      </tbody>
+    </table>
+    <p class="t-small mt-4">
+      Tahun lahir hanya dua digit, jadi abadnya ditebak. Kalau dua-duanya masuk akal (misalnya 05 bisa 1905 atau
+      2005), keduanya ditampilkan.
+    </p>
+  </section>
+
+  <section class="mt-14">
+    <h2 class="t-h2">Regex untuk validasi form</h2>
+    <p class="mt-2 text-ink-2 max-w-xl">Regex hanya mengecek pola. Tanggal seperti 31 Februari dan kode wilayah tetap perlu dicek di kode.</p>
+    <div class="mt-5"><CodeBlock label="JavaScript" code={regex} /></div>
+  </section>
+
+  <Fragment slot="aside">
+    <section>
+      <h2 class="t-h3">Dasar aturan</h2>
+      <ul class="mt-3 space-y-2 text-ink-2">
+        <li>Struktur NIK: PP No. 40 Tahun 2019 Pasal 31 ayat (1).</li>
+        <li>Kode wilayah: Kepmendagri No. 300.2.2-2138 Tahun 2025 jo. No. 300.2.2-2430 Tahun 2025.</li>
+      </ul>
+    </section>
+    <section>
+      <h2 class="t-h3">Yang tidak dicek</h2>
+      <p class="mt-3 text-ink-2">
+        Ini cek format, bukan cek data Dukcapil. NIK dengan format benar belum tentu terdaftar. Kode kecamatan lama
+        (sebelum pemekaran) bisa tidak ada di data 2025 walau NIK-nya sah.
+      </p>
+    </section>
+  </Fragment>
+</Tool>
+
+<script>
+  import { validateNik, type Wilayah } from '../../lib/nik';
+  import { h, clear, status } from '../../lib/dom';
+  import { bindMask, maskNik } from '../../lib/format';
+
+  const input = document.querySelector<HTMLInputElement>('#nik-in')!;
+  const out = document.querySelector<HTMLElement>('#nik-out')!;
+  let wilayah: Wilayah | null = null;
+  let loading: Promise<void> | null = null;
+
+  const load = () =>
+    (loading ??= fetch('/data/wilayah-nik.json')
+      .then((r) => r.json())
+      .then((w: Wilayah) => void (wilayah = w))
+      .catch(() => void (wilayah = null)));
+
+  async function render() {
+    clear(out);
+    if (!input.value.trim()) return;
+    await load();
+    if (!input.value.trim()) return clear(out); // input dikosongkan selama data wilayah dimuat
+    const r = validateNik(input.value, wilayah);
+    clear(out);
+    out.append(status(r.valid ? 'ok' : 'bad', r.valid ? 'Format NIK valid' : 'Format NIK tidak valid'));
+    if (r.segments.length) {
+      out.append(
+        h('table', { class: 'table' },
+          h('thead', null, h('tr', null, h('th', null, 'Bagian'), h('th', null, 'Digit'), h('th', null, 'Arti'))),
+          h('tbody', null, ...r.segments.map((s) => h('tr', null, h('td', null, s.label), h('td', { class: 'mono' }, s.value), h('td', null, s.meaning))))),
+      );
+    }
+    out.append(h('ul', { class: 'space-y-1 text-sm' }, ...r.checks.map((c) => h('li', { class: `is-${c.level === 'error' ? 'bad' : c.level === 'warning' ? 'warn' : 'info'}` }, c.message))));
+  }
+
+  bindMask(input, maskNik);
+  input.addEventListener('focus', load, { once: true });
+  input.addEventListener('input', render);
+</script>

@@ -1,0 +1,36 @@
+# HSTS sengaja pendek (300 detik). Setelah domain dan semua subdomain dipastikan HTTPS,
+# naikkan bertahap ke max-age=31536000, baru tambah includeSubDomains.
+# Salah setting dengan max-age panjang = domain tidak bisa dibuka sampai cache browser habis.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; require-trusted-types-for 'script'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Strict-Transport-Security: max-age=300
+
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# API publik read-only (file statis, tanpa cookie/tulis): CORS terbuka aman.
+# /api/ sendiri halaman HTML dokumentasi, jadi header hanya untuk file data.
+/api/libur.json
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=86400
+
+/api/libur/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=86400
+
+/api/wilayah/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=86400
+
+/kalender/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=86400
+  Content-Type: text/calendar; charset=utf-8
+
+/data/*
+  Cache-Control: public, max-age=86400

@@ -1,0 +1,96 @@
+---
+import Tool from '../../layouts/Tool.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import Icon from '../../components/Icon.astro';
+import js from '../../snippets/terbilang.js?raw';
+import php from '../../snippets/terbilang.php?raw';
+import py from '../../snippets/terbilang.py?raw';
+
+const rupiah = `const rp = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' });
+rp.format(1234567.89); // "Rp 1.234.568"  (dibulatkan, tanpa desimal)
+
+const rpSen = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 2 });
+rpSen.format(1234567.89); // "Rp 1.234.567,89"
+
+// Spasi setelah "Rp" adalah U+00A0 (non-breaking space), bukan spasi biasa.
+// Kalau membandingkan string di test, pakai '\\u00a0' atau .replace(/\\u00a0/g, ' ').`;
+---
+
+<Tool
+  slug="terbilang"
+  title="Terbilang rupiah online dan fungsi terbilang JS, PHP, Python"
+  description="Ubah angka jadi kata bahasa Indonesia sesuai EYD V (seribu, sebelas, miliar). Ada mode rupiah dengan sen, dan fungsi terbilang siap salin untuk JavaScript, PHP, dan Python."
+  lead="Ketik angka dengan format Indonesia (1.250.000,50) atau format program (1250000.50). Hasil mengikuti EYD V: bilangan ditulis terpisah, dan 10, 11, 100, 1000 memakai se-."
+>
+  <div class="panel">
+    <form class="max-w-xl" novalidate>
+      <label class="label" for="tb-in">Angka</label>
+      <div class="field-wrap">
+        <Icon name="abc" class="field-icon" />
+        <input id="tb-in" class="field text-lg" inputmode="decimal" maxlength="40" autocomplete="off" placeholder="1.250.000,50" />
+      </div>
+    </form>
+    <div id="tb-out" class="panel-out space-y-6" aria-live="polite"></div>
+  </div>
+
+  <section class="mt-16 space-y-5">
+    <h2 class="t-h2">Fungsi terbilang</h2>
+    <p class="text-ink-2 max-w-xl">Ketiga fungsi ini dites otomatis dengan lebih dari 2.100 angka dan hasilnya sama persis dengan halaman ini.</p>
+    <CodeBlock label="JavaScript" code={js} />
+    <CodeBlock label="PHP" code={php} />
+    <CodeBlock label="Python" code={py} />
+  </section>
+
+  <section class="mt-14 space-y-5">
+    <h2 class="t-h2">Format rupiah dengan Intl.NumberFormat</h2>
+    <p class="text-ink-2 max-w-xl">
+      Di Node 24 dan browser modern, mata uang IDR default-nya tanpa desimal, jadi angka dibulatkan. Tambahkan
+      <code>minimumFractionDigits</code> kalau perlu sen.
+    </p>
+    <CodeBlock label="JavaScript" code={rupiah} />
+  </section>
+
+  <Fragment slot="aside">
+    <section>
+      <h2 class="t-h3">Aturan penulisan</h2>
+      <ul class="mt-3 space-y-2 text-ink-2">
+        <li>EYD V: bilangan dalam kata ditulis terpisah, misalnya lima puluh lima ribu.</li>
+        <li>KBBI: sebelas, seratus, seribu, bukan satu ratus.</li>
+        <li>Ejaan baku: miliar, bukan milyar.</li>
+        <li>Contoh EYD V untuk kuitansi: Rp900.500,50 (sembilan ratus ribu lima ratus rupiah lima puluh sen).</li>
+      </ul>
+    </section>
+  </Fragment>
+</Tool>
+
+<script>
+  import { terbilang, terbilangRupiah, kapital } from '../../lib/terbilang';
+  import { h, clear, status, bindCopy } from '../../lib/dom';
+
+  const input = document.querySelector<HTMLInputElement>('#tb-in')!;
+  const out = document.querySelector<HTMLElement>('#tb-out')!;
+
+  function block(title: string, text: string) {
+    const btn = h('button', { type: 'button', class: 'btn btn-ghost btn-sm' }, 'Salin');
+    bindCopy(btn, () => text);
+    return h('div', { class: 'border-t border-ink pt-3' },
+      h('div', { class: 'flex items-center justify-between gap-3' }, h('h2', { class: 'text-sm text-mute' }, title), btn),
+      h('p', { class: 'mt-2 text-lg leading-snug' }, text));
+  }
+
+  input.addEventListener('input', () => {
+    clear(out);
+    const v = input.value.trim();
+    if (!v) return;
+    try {
+      out.append(block('Terbilang', kapital(terbilang(v))));
+      try {
+        out.append(block('Rupiah', kapital(terbilangRupiah(v))));
+      } catch (e) {
+        out.append(h('p', { class: 't-small' }, e instanceof Error ? e.message : ''));
+      }
+    } catch (e) {
+      out.append(status('bad', e instanceof Error ? e.message : 'Angka tidak bisa dibaca.'));
+    }
+  });
+</script>

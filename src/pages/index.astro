@@ -1,0 +1,176 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { site, tools } from '../config/site';
+---
+
+<Base title="devs.web.id: tools developer untuk data Indonesia" description={site.description}>
+  <div class="gridbg border-b border-line-2 pb-16 sm:pb-20">
+  <section class="wrap pt-12 sm:pt-20">
+    <div class="corners grid items-center gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-16">
+      <div>
+        <p class="chip"><span class="size-1.5 rounded-full bg-ok" aria-hidden="true"></span>{tools.length} tools · diproses di browser</p>
+        <h1 class="t-display mt-6">Tools developer untuk data <span class="serif">Indonesia.</span></h1>
+        <p class="t-lead mt-6">
+          QRIS, NIK, NPWP, nomor HP, terbilang, hari libur, dan kode wilayah. Gratis, tanpa daftar, dengan sumber aturan
+          yang jelas di setiap halaman.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a class="btn" href="#tools">Lihat semua tools<Icon name="arrow-right" class="size-4" /></a>
+          <a class="btn btn-ghost" href="/api/">Dokumentasi API</a>
+        </div>
+      </div>
+
+      <figure class="term min-w-0">
+        <figcaption class="term-bar">
+          <span>API statis · tanpa kunci</span>
+          <span class="flex gap-1.5" aria-hidden="true"><i class="size-2 rounded-full bg-[#3a3a3f]"></i><i class="size-2 rounded-full bg-[#3a3a3f]"></i><i class="size-2 rounded-full bg-brand"></i></span>
+        </figcaption>
+        <pre class="term-body"><code><span class="text-[#8b8b92]">$</span> curl devs.web.id/api/libur/2027.json
+<span class="text-[#8b8b92]">[{"{"} "tanggal": "2027-01-01",
+   "nama": "Tahun Baru 2027 Masehi" {"}"}, ...]</span>
+
+<span class="text-[#8b8b92]">$</span> curl devs.web.id/api/wilayah/provinsi.json
+<span class="text-[#8b8b92]">[{"{"} "kode": "11", "nama": "Aceh" {"}"}, ...]</span>
+<span class="inline-block h-4 w-2 translate-y-0.5 bg-[#e8e8e4]" aria-hidden="true"></span></code></pre>
+      </figure>
+    </div>
+
+    <dl class="stats mt-14">
+      <div><dt class="t-eyebrow mt-1">Tools</dt><dd class="text-3xl font-semibold tracking-tight mono">{tools.length}</dd></div>
+      <div><dt class="t-eyebrow mt-1">Provinsi</dt><dd class="text-3xl font-semibold tracking-tight mono">38</dd></div>
+      <div><dt class="t-eyebrow mt-1">Desa/kelurahan</dt><dd class="text-3xl font-semibold tracking-tight mono">83.762</dd></div>
+      <div><dt class="t-eyebrow mt-1">API key</dt><dd class="text-3xl font-semibold tracking-tight mono">0</dd></div>
+    </dl>
+  </section>
+  </div>
+
+  <section class="wrap mt-20" aria-labelledby="probe-h">
+    <p class="t-eyebrow">Coba langsung</p>
+    <h2 id="probe-h" class="t-h1 mt-3">Tempel <span class="serif">apa saja.</span></h2>
+    <div class="mt-8 border border-ink bg-paper shadow-[6px_6px_0_rgb(12_12_13/0.08)]">
+      <label for="probe" class="flex items-center justify-between gap-3 border-b border-ink bg-ink px-4 py-2.5 mono text-[0.6875rem] uppercase tracking-[0.06em] text-[#b5b5bb]">
+        <span class="inline-flex items-center gap-2 text-paper"><Icon name="clipboard-text" class="size-4" />Input</span>
+        <span class="hidden sm:inline">NIK · NPWP · QRIS · nomor HP · angka</span>
+      </label>
+      <textarea
+        id="probe"
+        class="block w-full resize-none bg-paper px-4 py-4 mono text-base sm:text-lg leading-relaxed focus:outline-none min-h-[5.5rem]"
+        rows="2"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder="3374011708900001"
+        aria-describedby="probe-out"></textarea>
+      <div id="probe-out" class="border-t border-line-2 bg-wash px-4 py-4 min-h-[4.5rem]" aria-live="polite">
+        <p class="t-small">Hasil muncul di sini saat kamu mengetik. Tidak ada data yang dikirim ke server.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="tools" class="wrap mt-24">
+    <p class="t-eyebrow">Semua tools</p>
+    <h2 class="t-h1 mt-3">Semua alat, <span class="serif">satu tempat.</span></h2>
+    <ul class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        tools.map((t) => (
+          <li>
+            <a href={`/${t.slug}/`} class="card group flex h-full flex-col">
+              <span class="flex items-start justify-between gap-3 p-5 pb-0">
+                <span class="tile"><Icon name={t.icon} /></span>
+                <span class:list={['badge', t.runs !== 'api' && 'badge-ghost']}>{t.runs === 'api' ? 'JSON API' : 'Browser'}</span>
+              </span>
+              <span class="mt-4 inline-flex items-center gap-1.5 px-5 text-lg font-semibold tracking-[-0.015em]">
+                {t.name}
+                <Icon name="arrow-up-right" class="size-4 opacity-0 transition-opacity group-hover:opacity-100" />
+              </span>
+              <span class="mt-2 grow px-5 text-[0.9375rem] leading-relaxed text-ink-2">{t.desc}</span>
+              <span class="mt-5 flex flex-wrap gap-1.5 border-t border-line px-5 py-3.5">
+                {t.tags.map((tag) => <span class="chip !border-line !bg-wash">{tag}</span>)}
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</Base>
+
+<script>
+  import { detect } from '../lib/detect';
+  import { decodeQris } from '../lib/qris';
+  import { validateNik, validateNpwp, type Wilayah } from '../lib/nik';
+  import { terbilang, terbilangRupiah, kapital } from '../lib/terbilang';
+  import { h, clear, status, kv } from '../lib/dom';
+
+  const input = document.querySelector<HTMLTextAreaElement>('#probe')!;
+  const out = document.querySelector<HTMLElement>('#probe-out')!;
+  let wilayah: Wilayah | null = null;
+
+  const more = (href: string, text: string) => h('a', { class: 'link text-sm mt-3 inline-block', href }, text);
+
+  async function loadWilayah() {
+    if (wilayah) return wilayah;
+    try {
+      wilayah = await (await fetch('/data/wilayah-nik.json')).json();
+    } catch {
+      wilayah = null;
+    }
+    return wilayah;
+  }
+
+  let seq = 0;
+  async function render() {
+    const id = ++seq;
+    const v = input.value;
+    const kind = detect(v);
+    const nodes: Node[] = [];
+    try {
+      if (kind === 'empty') {
+        nodes.push(h('p', { class: 't-small' }, 'Hasil muncul di sini saat kamu mengetik. Tidak ada data yang dikirim ke server.'));
+      } else if (kind === 'qris') {
+        const r = decodeQris(v);
+        const errors = r.issues.filter((i) => i.level === 'error');
+        nodes.push(status(errors.length ? 'bad' : 'ok', errors.length ? `QRIS, ${errors.length} masalah ditemukan` : 'QRIS valid, CRC cocok'));
+        nodes.push(kv([['Merchant', r.summary.merchantName ?? '-'], ['Kota', r.summary.merchantCity ?? '-'], ['Jenis', r.summary.method ?? '-'], ['NMID', r.summary.nmid ?? '-']]));
+        nodes.push(more('/qris/', 'Lihat semua tag di Decoder QRIS'));
+      } else if (kind === 'nik') {
+        const w = await loadWilayah();
+        if (id !== seq) return;
+        const r = validateNik(v, w);
+        nodes.push(status(r.valid ? 'ok' : 'bad', r.valid ? 'Format NIK valid' : 'Format NIK tidak valid'));
+        nodes.push(kv(r.segments.map((s) => [s.label, `${s.value}  ${s.meaning}`])));
+        nodes.push(more('/nik/', 'Penjelasan lengkap di Cek format NIK'));
+      } else if (kind === 'npwp') {
+        const r = validateNpwp(v);
+        nodes.push(status(r.valid ? 'ok' : 'bad', r.type));
+        nodes.push(...r.checks.map((c) => h('p', { class: 'text-sm mt-1' }, c.message)));
+        nodes.push(more('/npwp/', 'Buka Cek format NPWP'));
+      } else if (kind === 'phone') {
+        const { checkPhone } = await import('../lib/phone');
+        if (id !== seq) return;
+        const r = checkPhone(v);
+        nodes.push(status(r.valid ? 'ok' : 'bad', r.message));
+        if (r.valid) nodes.push(kv([['E.164', r.e164!], ['Jenis', r.type!], ['Operator', r.operator ? `${r.operator.brand} (${r.operator.company})` : '-']]));
+        nodes.push(more('/nomor-hp/', 'Buka Cek nomor HP'));
+      } else if (kind === 'number') {
+        nodes.push(h('p', { class: 'text-lg' }, kapital(terbilang(v))));
+        try {
+          nodes.push(h('p', { class: 't-small mt-1' }, kapital(terbilangRupiah(v))));
+        } catch {
+          /* lebih dari 2 digit desimal: bukan nominal rupiah */
+        }
+        nodes.push(more('/terbilang/', 'Fungsi terbilang untuk JS, PHP, dan Python'));
+      } else {
+        nodes.push(status('info', 'Belum kenal format ini.'));
+        nodes.push(h('p', { class: 't-small mt-1' }, 'Coba NIK 16 digit, NPWP, string QRIS yang diawali 000201, nomor HP 08xx, atau angka.'));
+      }
+    } catch (e) {
+      nodes.push(status('bad', e instanceof Error ? e.message : 'Input tidak bisa dibaca.'));
+    }
+    if (id !== seq) return;
+    clear(out);
+    out.append(...nodes);
+  }
+
+  input.addEventListener('input', render);
+</script>

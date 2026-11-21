@@ -1,0 +1,51 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { site, tools } from '../config/site';
+
+const year = new Date().getFullYear();
+const more = [{ label: 'Dokumentasi API', href: '/api/' }, ...site.footerLinks];
+---
+
+<footer class="mt-28 bg-ink text-[#b5b5bb]">
+  <div class="wrap grid gap-12 py-16 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] md:gap-10">
+    <div class="max-w-sm">
+      <a href="/" class="inline-block text-paper" aria-label={`${site.name}, beranda`}><Logo invert /></a>
+      <p class="mt-5 text-[0.9375rem] leading-relaxed">
+        Tools gratis untuk developer Indonesia. Data diproses di browser kamu, tidak dikirim ke server.
+      </p>
+      <a class="btn btn-sm mt-6 !border-[#3a3a3f] !bg-transparent !text-paper hover:!bg-[#2a2a2e]" href="/api/">
+        <Icon name="api" class="size-4" />Pakai API gratis
+      </a>
+    </div>
+    <nav aria-label="Tools">
+      <p class="mono text-[0.6875rem] uppercase tracking-[0.06em] text-[#6b6b72]">Tools</p>
+      <ul class="mt-4 space-y-2.5 text-[0.9375rem]">
+        {
+          tools.map((t) => (
+            <li>
+              <a class="inline-flex items-center gap-2.5 transition-colors hover:text-paper" href={`/${t.slug}/`}>
+                <Icon name={t.icon} class="size-4 text-[#6b6b72]" />
+                {t.name}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <nav aria-label="Lainnya">
+      <p class="mono text-[0.6875rem] uppercase tracking-[0.06em] text-[#6b6b72]">Lainnya</p>
+      <ul class="mt-4 space-y-2.5 text-[0.9375rem]">
+        {more.map((l) => <li><a class="transition-colors hover:text-paper" href={l.href}>{l.label}</a></li>)}
+      </ul>
+    </nav>
+  </div>
+  <div class="border-t border-[#26262a]">
+    <div class="wrap flex flex-wrap items-center justify-between gap-3 py-5 mono text-[0.6875rem] uppercase tracking-[0.06em] text-[#6b6b72]">
+      <span>© {year} {site.name}</span>
+      <span>
+        Dibuat oleh <a class="text-paper underline decoration-[#4a4a50] underline-offset-4 hover:decoration-paper" href={site.author.href} target="_blank" rel="noopener noreferrer">{site.author.name}</a>
+      </span>
+    </div>
+  </div>
+</footer>

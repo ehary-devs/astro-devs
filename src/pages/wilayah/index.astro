@@ -1,0 +1,141 @@
+---
+import Tool from '../../layouts/Tool.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import Icon from '../../components/Icon.astro';
+
+const usage = `const API = 'https://devs.web.id/api/wilayah';
+
+const provinsi  = await (await fetch(\`\${API}/provinsi.json\`)).json();
+// [{ kode: "11", nama: "Aceh" }, ...]
+
+const kabupaten = await (await fetch(\`\${API}/kabupaten/33.json\`)).json();
+const kecamatan = await (await fetch(\`\${API}/kecamatan/33.74.json\`)).json();
+const desa      = await (await fetch(\`\${API}/desa/33.74.01.json\`)).json();
+// [{ kode: "33.74.01.1001", nama: "..." }, ...]`;
+---
+
+<Tool
+  slug="wilayah"
+  title="API kode wilayah Indonesia 2025: provinsi, kabupaten, kecamatan, desa"
+  description="Kode dan nama 38 provinsi, 514 kabupaten/kota, 7.285 kecamatan, dan 83.762 desa/kelurahan sesuai Kepmendagri 300.2.2-2138 Tahun 2025 jo. 300.2.2-2430 Tahun 2025. JSON statis gratis tanpa API key."
+  lead="Data Kepmendagri No. 300.2.2-2138 Tahun 2025 (diubah dengan No. 300.2.2-2430 Tahun 2025) dalam bentuk file JSON statis. Pilih wilayah di bawah untuk melihat kodenya, atau panggil langsung dari aplikasi."
+>
+  <div class="panel">
+    <form class="grid gap-4 sm:grid-cols-2" novalidate>
+      {
+        [
+          ['provinsi', 'Provinsi'],
+          ['kabupaten', 'Kabupaten/kota'],
+          ['kecamatan', 'Kecamatan'],
+          ['desa', 'Desa/kelurahan'],
+        ].map(([id, label], i) => (
+          <div>
+            <label class="label" for={`w-${id}`}>{label}</label>
+            <div class="field-wrap">
+              <Icon name="search" class="field-icon size-[1.125rem]" />
+              <input
+                id={`w-${id}`}
+                class="field font-sans pr-10"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                aria-controls={`w-${id}-list`}
+                autocomplete="off"
+                spellcheck="false"
+                disabled
+                placeholder={i === 0 ? 'Memuat...' : 'Pilih yang di atas dulu'}
+                data-level={id}
+              />
+              <Icon name="selector" class="field-icon-r size-[1.125rem]" />
+              <ul id={`w-${id}-list`} class="cb-list" role="listbox" aria-label={label} hidden></ul>
+            </div>
+          </div>
+        ))
+      }
+    </form>
+    <div id="w-out" class="panel-out " aria-live="polite"></div>
+  </div>
+
+  <section class="mt-16 space-y-5">
+    <h2 class="t-h2">Endpoint</h2>
+    <div class="overflow-x-auto">
+      <table class="table min-w-[34rem]">
+        <thead><tr><th>Path</th><th>Isi</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">/api/wilayah/provinsi.json</td><td>38 provinsi</td></tr>
+          <tr><td class="mono">/api/wilayah/kabupaten/{'{prov}'}.json</td><td>Kab/kota di satu provinsi</td></tr>
+          <tr><td class="mono">/api/wilayah/kecamatan/{'{kab}'}.json</td><td>Kecamatan di satu kab/kota</td></tr>
+          <tr><td class="mono">/api/wilayah/desa/{'{kec}'}.json</td><td>Desa/kelurahan di satu kecamatan</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-ink-2 max-w-xl">
+      Kode memakai titik sesuai Kepmendagri: <code>33</code>, <code>33.74</code>, <code>33.74.01</code>,
+      <code>33.74.01.1001</code>. Enam digit awal NIK sama dengan kode kecamatan tanpa titik.
+    </p>
+    <CodeBlock label="JavaScript" code={usage} />
+  </section>
+
+  <Fragment slot="aside">
+    <section>
+      <h2 class="t-h3">Sumber</h2>
+      <p class="mt-3 text-ink-2">
+        Diolah langsung dari <a class="link" href="https://peraturan.bpk.go.id/Details/322942" target="_blank" rel="noopener noreferrer">lampiran Kepmendagri No. 300.2.2-2138 Tahun 2025</a> jo. No. 300.2.2-2430 Tahun 2025 (perubahan hanya menyangkut data pulau). Nama mengikuti lampiran, hanya dirapikan penulisannya (spasi, tanda baca, singkatan "Kab"). Isi keputusan menteri bukan objek hak cipta (UU 28/2014 Pasal 42).
+      </p>
+    </section>
+    <section>
+      <h2 class="t-h3">Jumlah data</h2>
+      <dl class="mt-3 grid grid-cols-[1fr_auto] gap-y-1 text-ink-2">
+        <dt>Provinsi</dt><dd class="mono">38</dd>
+        <dt>Kabupaten/kota</dt><dd class="mono">514</dd>
+        <dt>Kecamatan</dt><dd class="mono">7.285</dd>
+        <dt>Desa/kelurahan</dt><dd class="mono">83.762</dd>
+      </dl>
+    </section>
+  </Fragment>
+</Tool>
+
+<script>
+  import { clear, h, kv } from '../../lib/dom';
+  import { combobox, type Item } from '../../lib/combobox';
+
+  type Row = { kode: string; nama: string };
+  const levels = ['provinsi', 'kabupaten', 'kecamatan', 'desa'] as const;
+  const out = document.querySelector<HTMLElement>('#w-out')!;
+  const picked: Item[] = [];
+  // Kode induk yang sedang diminta per level: respons lama (user sudah ganti pilihan) dibuang.
+  const want: string[] = [];
+
+  const boxes = levels.map((l, i) =>
+    combobox(document.querySelector<HTMLInputElement>(`#w-${l}`)!, document.querySelector<HTMLUListElement>(`#w-${l}-list`)!, (it) => onPick(i, it)),
+  );
+
+  const url = (i: number, parent: string) => (i === 0 ? '/api/wilayah/provinsi.json' : `/api/wilayah/${levels[i]}/${parent}.json`);
+
+  async function fill(i: number, parent = '') {
+    want[i] = parent;
+    boxes[i].set([], 'Memuat...');
+    try {
+      const rows: Row[] = await (await fetch(url(i, parent))).json();
+      if (want[i] !== parent) return;
+      boxes[i].set(rows.map((r) => ({ value: r.kode, label: r.nama })), `Cari ${levels[i]} (${rows.length})`);
+    } catch {
+      if (want[i] === parent) boxes[i].set([], 'Gagal memuat. Muat ulang halaman.');
+    }
+  }
+
+  function onPick(i: number, it: Item) {
+    picked.length = i;
+    picked[i] = it;
+    for (let j = i + 1; j < boxes.length; j++) {
+      want[j] = '';
+      boxes[j].set([], 'Pilih yang di atas dulu');
+    }
+    clear(out);
+    out.append(kv(picked.map((p, k) => [`Kode ${levels[k]}`, `${p.value}  ${p.label}`])));
+    if (i === 2) out.append(h('p', { class: 't-small mt-3' }, `Awalan NIK untuk kecamatan ini: ${it.value.replace(/\./g, '')}`));
+    if (i < boxes.length - 1) fill(i + 1, it.value);
+  }
+
+  fill(0);
+</script>

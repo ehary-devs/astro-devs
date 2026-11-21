@@ -1,0 +1,95 @@
+---
+import Tool from '../../layouts/Tool.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import Icon from '../../components/Icon.astro';
+
+const convert = `// NPWP 15 digit lama -> 16 digit (wajib pajak badan/instansi): tambahkan "0" di depan
+function npwp16(npwp) {
+  const d = npwp.replace(/\\D/g, '');
+  if (d.length === 16) return d;
+  if (d.length === 15) return '0' + d;
+  throw new Error('NPWP harus 15 atau 16 digit');
+}
+
+npwp16('01.234.567.8-901.000'); // "0012345678901000"`;
+---
+
+<Tool
+  slug="npwp"
+  title="Cek format NPWP 15 dan 16 digit"
+  description="Kenali format NPWP lama (15 digit) dan baru (16 digit), kode KPP, status pusat/cabang, dan konversi ke NPWP 16 digit sesuai PMK 112/2022."
+  lead="Masukkan NPWP dengan atau tanpa titik dan strip. Format lama 15 digit dan format baru 16 digit sama-sama dikenali."
+>
+  <div class="panel">
+    <form class="max-w-md" novalidate>
+      <label class="label" for="npwp-in">NPWP</label>
+      <div class="field-wrap">
+        <Icon name="receipt-tax" class="field-icon" />
+        <input id="npwp-in" class="field text-lg tracking-wider" inputmode="numeric" maxlength="24" autocomplete="off" spellcheck="false" placeholder="01.234.567.8-901.000" aria-describedby="npwp-hint" />
+      </div>
+      <p id="npwp-hint" class="t-small mt-2">Titik dan strip ditambahkan otomatis. 16 digit dikelompokkan per 4 angka.</p>
+    </form>
+    <div id="npwp-out" class="panel-out space-y-4" aria-live="polite"></div>
+  </div>
+
+  <section class="mt-16 max-w-2xl">
+    <h2 class="t-h2">NPWP 16 digit</h2>
+    <p class="mt-3 text-ink-2">
+      Sejak 1 Juli 2024 (PMK 112/2022 jo. PMK 136/2023), orang pribadi penduduk memakai NIK sebagai NPWP. Wajib pajak
+      badan dan instansi pemerintah yang sudah punya NPWP lama memakai NPWP 16 digit, yaitu angka 0 diikuti NPWP 15
+      digit lama. Cabang tidak lagi punya NPWP sendiri dan memakai NITKU.
+    </p>
+    <h2 class="t-h2 mt-12">NPWP 15 digit (format lama)</h2>
+    <table class="table mt-5">
+      <thead><tr><th>Digit</th><th>Isi</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">1-9</td><td>Kode wajib pajak</td></tr>
+        <tr><td class="mono">10-12</td><td>Kode KPP tempat terdaftar</td></tr>
+        <tr><td class="mono">13-15</td><td>Status: 000 untuk pusat atau tunggal, selain itu cabang</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="mt-14">
+    <h2 class="t-h2">Konversi ke 16 digit di kode kamu</h2>
+    <div class="mt-5"><CodeBlock label="JavaScript" code={convert} /></div>
+  </section>
+
+  <Fragment slot="aside">
+    <section>
+      <h2 class="t-h3">Dasar aturan</h2>
+      <ul class="mt-3 space-y-2 text-ink-2">
+        <li>PMK 112/PMK.03/2022 tentang NPWP bagi orang pribadi, badan, dan instansi pemerintah.</li>
+        <li>PMK 136 Tahun 2023: berlaku penuh 1 Juli 2024.</li>
+        <li>Struktur 15 digit: DJP, mengacu SE-60/PJ/2013.</li>
+      </ul>
+    </section>
+    <section>
+      <h2 class="t-h3">Yang tidak dicek</h2>
+      <p class="mt-3 text-ink-2">Ini cek format, bukan cek status di DJP. Untuk memastikan NPWP terdaftar, pakai layanan resmi DJP.</p>
+    </section>
+  </Fragment>
+</Tool>
+
+<script>
+  import { validateNpwp } from '../../lib/nik';
+  import { h, clear, status, kv } from '../../lib/dom';
+  import { bindMask, maskNpwp } from '../../lib/format';
+
+  const input = document.querySelector<HTMLInputElement>('#npwp-in')!;
+  const out = document.querySelector<HTMLElement>('#npwp-out')!;
+
+  bindMask(input, maskNpwp);
+  input.addEventListener('input', () => {
+    clear(out);
+    if (!input.value.trim()) return;
+    const r = validateNpwp(input.value);
+    out.append(status(r.valid ? 'ok' : 'bad', r.valid ? r.type : 'Format NPWP tidak valid'));
+    if (r.valid) {
+      const rows: [string, string][] = [['Ditulis', r.formatted]];
+      if (r.digits.length === 15) rows.push(['16 digit', '0' + r.digits]);
+      out.append(kv(rows));
+    }
+    out.append(h('ul', { class: 'space-y-1 text-sm' }, ...r.checks.map((c) => h('li', { class: c.level === 'error' ? 'is-bad' : c.level === 'warning' ? 'is-warn' : 'is-info' }, c.message))));
+  });
+</script>

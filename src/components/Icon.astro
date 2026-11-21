@@ -1,0 +1,38 @@
+---
+/**
+ * Ikon Tabler (outline), di-render saat build jadi <svg> inline. Tidak ada JS/font ikon yang dikirim ke browser.
+ * Nama ikon: https://tabler.io/icons
+ */
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+
+interface Props {
+  name: string;
+  class?: string;
+  /** Teks untuk pembaca layar. Kosong = dekoratif (aria-hidden). */
+  label?: string;
+}
+
+const { name, class: cls = 'size-5', label } = Astro.props;
+const require = createRequire(import.meta.url);
+const inner = readFileSync(require.resolve(`@tabler/icons/outline/${name}.svg`), 'utf8')
+  .replace(/^[\s\S]*?<svg[^>]*>/, '')
+  .replace(/<\/svg>\s*$/, '')
+  .replace(/<path stroke="none" d="M0 0h24v24H0z" fill="none"\s*\/>/, '');
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.75"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  class:list={['shrink-0', cls, !/\bsize-/.test(cls) && 'size-5']}
+  aria-hidden={label ? undefined : 'true'}
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  focusable="false"
+  set:html={inner}
+/>

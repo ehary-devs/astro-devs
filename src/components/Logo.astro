@@ -1,0 +1,28 @@
+---
+// Logo: huruf "d" + titik merah (titik di devs.web.id, merah-putih). Sama dengan public/favicon.svg.
+interface Props {
+  /** Tampilkan nama domain di samping tanda. */
+  wordmark?: boolean;
+  /** Versi untuk latar gelap: kotak putih, huruf hitam. */
+  invert?: boolean;
+}
+const { wordmark = true, invert = false } = Astro.props;
+---
+
+<span class="inline-flex items-center gap-2.5">
+  <svg viewBox="0 0 32 32" class="size-7 shrink-0" aria-hidden="true" focusable="false">
+    <rect width="32" height="32" rx="8" fill={invert ? '#fff' : '#0c0c0d'}></rect>
+    <g fill="none" stroke={invert ? '#0c0c0d' : '#fff'} stroke-width="3.75" stroke-linecap="round">
+      <circle cx="12.5" cy="18.5" r="6"></circle>
+      <path d="M18.5 6.75v17.75"></path>
+    </g>
+    <circle cx="25" cy="22.6" r="2.5" fill="#ef3340"></circle>
+  </svg>
+  {
+    wordmark && (
+      <span class="mono text-[0.9375rem] font-semibold tracking-tight max-[379px]:hidden">
+        devs<span class="text-brand">.</span><span class:list={['font-medium', invert ? 'text-[#8b8b92]' : 'text-mute']}>web.id</span>
+      </span>
+    )
+  }
+</span>

@@ -1,0 +1,58 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import { LIBUR } from '../../data/libur';
+
+const rows: [string, string, string][] = [
+  ['Struktur NIK', 'PP No. 40 Tahun 2019 Pasal 31 ayat (1)', 'https://peraturan.bpk.go.id/Details/108801/pp-no-40-tahun-2019'],
+  ['Kode wilayah', 'Lampiran Kepmendagri No. 300.2.2-2138 Tahun 2025 jo. No. 300.2.2-2430 Tahun 2025, diolah sendiri dari PDF resmi', 'https://peraturan.bpk.go.id/Details/322942'],
+  ['NPWP 16 digit', 'PMK 112/PMK.03/2022 jo. PMK 136 Tahun 2023', 'https://jdih.kemenkeu.go.id/dok/pmk-136-tahun-2023'],
+  ['Struktur NPWP 15 digit', 'Penjelasan DJP mengacu SE-60/PJ/2013', 'https://www.pajak.go.id/en/node/36934'],
+  ['Struktur QRIS dan CRC', 'EMVCo QR Code Specification for Payment Systems, Merchant-Presented Mode v1.1', 'https://www.emvco.com/emv-technologies/qr-codes/'],
+  ['Akses spesifikasi QRIS', 'PADG No. 21/18/PADG/2019 Pasal 4-5', 'https://www.bi.go.id/id/publikasi/peraturan/Documents/padg_211819.pdf'],
+  ['Validasi nomor telepon', 'libphonenumber (Google), paket libphonenumber-js (MIT)', 'https://www.npmjs.com/package/libphonenumber-js'],
+  ['Penulisan bilangan', 'EYD V dan KBBI, Badan Bahasa', 'https://kbbi.kemendikdasmen.go.id/entri/sebelas'],
+  ...LIBUR.map((t): [string, string, string] => [`Hari libur ${t.tahun}`, t.dasar, t.sumber]),
+];
+const host = (href: string) => new URL(href).hostname.replace(/^www\./, '');
+---
+
+<Base title="Sumber data" description="Peraturan dan dataset yang dipakai setiap tool di devs.web.id, lengkap dengan tautan ke sumber resminya.">
+  <PageHeader
+    crumb="Sumber data"
+    heading="Sumber data"
+    lead="Setiap angka dan aturan di situs ini bisa dilacak ke sumbernya. Kalau ada yang tidak cocok dengan peraturan terbaru, beri tahu kami."
+  >
+    <Fragment slot="meta">
+      <Icon name="database" class="size-7" />
+      <span class="badge">{rows.length} sumber</span>
+      <span class="chip">Diperiksa 21 Nov 2026</span>
+    </Fragment>
+  </PageHeader>
+
+  <div class="wrap mt-12">
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        rows.map(([what, basis, href]) => (
+          <li>
+            <a class="card group flex h-full flex-col" href={href} target="_blank" rel="nofollow noopener noreferrer">
+              <span class="flex items-start justify-between gap-3 px-5 pt-5">
+                <span class="font-semibold tracking-[-0.01em]">{what}</span>
+                <Icon name="arrow-up-right" class="size-4 text-mute transition-colors group-hover:text-ink" />
+              </span>
+              <span class="mt-2 grow px-5 text-[0.9375rem] leading-relaxed text-ink-2">{basis}</span>
+              <span class="mt-5 flex items-center gap-2 border-t border-line px-5 py-3 mono text-[0.75rem] text-mute">
+                <Icon name="world" class="size-3.5" />
+                {host(href)}
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="t-small mt-8">
+      Koreksi atau usulan sumber: <a class="link text-ink" href="https://ehary.id" target="_blank" rel="noopener noreferrer">ehary.id</a>.
+    </p>
+  </div>
+</Base>

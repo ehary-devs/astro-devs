@@ -1,0 +1,117 @@
+---
+import Tool from '../../layouts/Tool.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import Icon from '../../components/Icon.astro';
+
+const snippet = `// npm i libphonenumber-js
+import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
+
+const pn = parsePhoneNumberFromString('0812-3456-7890', 'ID');
+pn?.isValid();   // true
+pn?.number;      // "+6281234567890" (E.164, simpan format ini di database)
+pn?.getType();   // "MOBILE" (butuh /max, metadata default tidak punya jenis nomor)`;
+
+const normalize = `// Normalisasi tanpa library: 08xx / 628xx / +628xx -> 628xx (format wa.me)
+function toWa(nomor) {
+  const d = nomor.replace(/\\D/g, '');
+  if (d.startsWith('0')) return '62' + d.slice(1);
+  if (d.startsWith('62')) return d;
+  throw new Error('Bukan nomor Indonesia');
+}`;
+
+const prefixes: [string, string, string][] = [
+  ['Telkomsel', 'Telkomsel', '0811, 0812, 0813, 0821, 0822, 0823, 0851, 0852, 0853'],
+  ['Indosat (IM3)', 'Indosat Ooredoo Hutchison', '0814, 0815, 0816, 0855, 0856, 0857, 0858'],
+  ['Tri', 'Indosat Ooredoo Hutchison', '0895, 0896, 0897, 0898, 0899'],
+  ['XL', 'XLSmart', '0817, 0818, 0819, 0859, 0877, 0878'],
+  ['AXIS', 'XLSmart', '0831, 0832, 0833, 0838'],
+  ['Smartfren', 'XLSmart', '0881 sampai 0889'],
+];
+---
+
+<Tool
+  slug="nomor-hp"
+  title="Cek nomor HP Indonesia: valid, operator, format E.164"
+  description="Validasi nomor HP dan telepon Indonesia, kenali jenis nomor dan operator (Telkomsel, Indosat, Tri, XL, AXIS, Smartfren), lalu ubah ke format E.164 dan link wa.me."
+  lead="Masukkan nomor dalam format apa saja: 0812..., 62812..., +62 812-..., atau nomor telepon rumah dengan kode area."
+>
+  <div class="panel">
+    <form class="max-w-md" novalidate>
+      <label class="label" for="hp-in">Nomor telepon</label>
+      <div class="field-wrap">
+        <Icon name="device-mobile" class="field-icon" />
+        <input id="hp-in" class="field text-lg" type="tel" inputmode="tel" maxlength="24" autocomplete="off" placeholder="0812-3456-7890" aria-describedby="hp-hint" />
+      </div>
+      <p id="hp-hint" class="t-small mt-2">Nomor diformat otomatis sesuai pola nomor Indonesia.</p>
+    </form>
+    <div id="hp-out" class="panel-out space-y-4" aria-live="polite"></div>
+  </div>
+
+  <section class="mt-16">
+    <h2 class="t-h2">Prefix seluler per operator</h2>
+    <div class="overflow-x-auto mt-5">
+      <table class="table min-w-[32rem]">
+        <thead><tr><th>Merek</th><th>Perusahaan</th><th>Prefix</th></tr></thead>
+        <tbody>
+          {prefixes.map(([brand, co, list]) => <tr><td>{brand}</td><td class="text-ink-2">{co}</td><td class="mono">{list}</td></tr>)}
+        </tbody>
+      </table>
+    </div>
+    <p class="t-small mt-4 max-w-2xl">
+      XL dan Smartfren bergabung menjadi PT XLSMART Telecom Sejahtera Tbk (efektif 16 April 2025). Indosat dan Tri
+      bergabung menjadi Indosat Ooredoo Hutchison (4 Januari 2022). by.U memakai prefix Telkomsel.
+    </p>
+  </section>
+
+  <section class="mt-14 space-y-5">
+    <h2 class="t-h2">Di kode kamu</h2>
+    <CodeBlock label="JavaScript, libphonenumber-js" code={snippet} />
+    <CodeBlock label="JavaScript, tanpa library" code={normalize} />
+  </section>
+
+  <Fragment slot="aside">
+    <section>
+      <h2 class="t-h3">Cara kerja</h2>
+      <p class="mt-3 text-ink-2">
+        Panjang dan jenis nomor dicek dengan metadata libphonenumber dari Google. Operator ditebak dari 4 digit awal.
+      </p>
+    </section>
+    <section>
+      <h2 class="t-h3">Batasan</h2>
+      <p class="mt-3 text-ink-2">
+        Operator di sini adalah operator penerbit nomor. Indonesia belum menerapkan pindah operator dengan nomor tetap
+        (MNP), jadi tebakan ini masih tepat. Kalau MNP berlaku nanti, tebakan operator dari prefix tidak bisa
+        diandalkan lagi.
+      </p>
+    </section>
+  </Fragment>
+</Tool>
+
+<script>
+  import { checkPhone } from '../../lib/phone';
+  import { AsYouType } from 'libphonenumber-js/max';
+  import { h, clear, status, kv } from '../../lib/dom';
+  import { bindMask } from '../../lib/format';
+
+  const input = document.querySelector<HTMLInputElement>('#hp-in')!;
+  const out = document.querySelector<HTMLElement>('#hp-out')!;
+
+  // AsYouType mengembalikan '' untuk '+' saja: pakai nilai asli supaya '+' tidak hilang.
+  bindMask(input, (v) => new AsYouType('ID').input(v) || v);
+  input.addEventListener('input', () => {
+    clear(out);
+    if (!input.value.trim()) return;
+    const r = checkPhone(input.value);
+    out.append(status(r.valid ? 'ok' : 'bad', r.message));
+    if (!r.valid) return;
+    const rows: [string, string | Node][] = [
+      ['Jenis', r.type!],
+      ['Operator', r.operator ? `${r.operator.brand} (${r.operator.company})` : '-'],
+      ['E.164', r.e164!],
+      ['Nasional', r.national!],
+      ['Internasional', r.international!],
+    ];
+    if (r.waLink) rows.push(['WhatsApp', h('a', { class: 'link', href: r.waLink, target: '_blank', rel: 'noopener noreferrer' }, r.waLink)]);
+    out.append(kv(rows));
+  });
+</script>

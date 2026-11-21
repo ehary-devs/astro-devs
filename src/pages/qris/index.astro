@@ -1,0 +1,162 @@
+---
+import Tool from '../../layouts/Tool.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import Icon from '../../components/Icon.astro';
+
+import crcJs from '../../snippets/crc16.js?raw';
+import crcPhp from '../../snippets/crc16.php?raw';
+import crcPy from '../../snippets/crc16.py?raw';
+---
+
+<Tool
+  slug="qris"
+  title="Decoder QRIS online: cek isi tag dan CRC"
+  description="Bongkar string QRIS per tag EMVCo, cek CRC-16, lihat NMID dan kriteria merchant, lalu ubah QRIS statis jadi dinamis. Diproses di browser."
+  lead="Tempel string QRIS (teks di balik kode QR, diawali 000201). Semua tag dibongkar, CRC dicek, dan QR statis bisa diubah jadi dinamis dengan nominal tertentu."
+>
+  <div class="panel">
+    <form id="qris-form" class="space-y-3" novalidate>
+      <label class="label" for="qris-in">String QRIS</label>
+      <textarea id="qris-in" class="field" rows="4" spellcheck="false" autocomplete="off" placeholder="00020101021126570011ID.DANA.WWW..."></textarea>
+      <p class="t-small">Belum punya string-nya? Pindai QR dengan aplikasi pembaca QR biasa, lalu salin teksnya ke sini.</p>
+    </form>
+
+    <div id="qris-out" class="panel-out space-y-6" aria-live="polite"></div>
+  </div>
+
+  <section id="dyn" class="card mt-12 bg-wash/50 p-5 sm:p-6" hidden>
+    <h2 class="t-h2">Ubah ke QRIS dinamis</h2>
+    <p class="mt-2 text-ink-2 max-w-xl">
+      Tag 01 diganti ke 12, nominal masuk ke tag 54, lalu CRC dihitung ulang. Pembeli tidak perlu mengetik nominal saat
+      membayar.
+    </p>
+    <div class="mt-5 flex flex-wrap items-end gap-3">
+      <div class="grow max-w-xs">
+        <label class="label" for="dyn-amount">Nominal (rupiah)</label>
+        <div class="field-wrap">
+          <span class="field-prefix" aria-hidden="true">Rp</span>
+          <input id="dyn-amount" class="field" inputmode="numeric" maxlength="19" autocomplete="off" placeholder="25.000" />
+        </div>
+      </div>
+      <button type="button" id="dyn-go" class="btn"><Icon name="qrcode" class="size-4" />Buat QRIS dinamis</button>
+    </div>
+    <div id="dyn-out" class="mt-5" aria-live="polite"></div>
+  </section>
+
+  <section class="mt-16">
+    <h2 class="t-h2">Validasi CRC di kode kamu</h2>
+    <p class="mt-2 text-ink-2 max-w-xl">Fungsi yang sama dengan yang dipakai halaman ini. Hasil untuk input <code>123456789</code> harus <code>29B1</code>.</p>
+    <div class="mt-5 space-y-5">
+      <CodeBlock label="JavaScript" code={crcJs} />
+      <CodeBlock label="PHP" code={crcPhp} />
+      <CodeBlock label="Python" code={crcPy} />
+    </div>
+  </section>
+
+  <Fragment slot="aside">
+    <section>
+      <h2 class="t-h3">Aturan yang dipakai</h2>
+      <ul class="mt-3 space-y-2 text-ink-2">
+        <li>Struktur TLV dan CRC: EMVCo QR Code Specification for Payment Systems, Merchant-Presented Mode v1.1.</li>
+        <li>CRC-16/CCITT-FALSE dihitung atas seluruh data termasuk <code>6304</code>.</li>
+        <li>Tag 51 berisi GUID <code>ID.CO.QRIS.WWW</code> dan NMID.</li>
+      </ul>
+    </section>
+    <section>
+      <h2 class="t-h3">Batasan</h2>
+      <p class="mt-3 text-ink-2">
+        Spesifikasi teknis QRIS dari ASPI tidak dibuka untuk umum (PADG 21/18/PADG/2019). Aturan khusus QRIS di sini
+        mengikuti pola QRIS yang beredar. CRC valid bukan jaminan QRIS asli: cek nama merchant sebelum membayar.
+      </p>
+    </section>
+  </Fragment>
+</Tool>
+
+<script>
+  import { decodeQris, tagName, toDynamic, type Tlv } from '../../lib/qris';
+  import { h, clear, status, bindCopy } from '../../lib/dom';
+  import { bindMask, formatRibuan } from '../../lib/format';
+
+  const input = document.querySelector<HTMLTextAreaElement>('#qris-in')!;
+  const out = document.querySelector<HTMLElement>('#qris-out')!;
+  const dyn = document.querySelector<HTMLElement>('#dyn')!;
+  const amount = document.querySelector<HTMLInputElement>('#dyn-amount')!;
+  const dynOut = document.querySelector<HTMLElement>('#dyn-out')!;
+
+  function rows(tags: Tlv[], parent?: string, depth = 0): HTMLTableRowElement[] {
+    return tags.flatMap((t) => [
+      h(
+        'tr',
+        null,
+        h('td', { class: `mono whitespace-nowrap ${depth ? 'pl-5 text-mute' : ''}` }, parent ? `${parent}.${t.tag}` : t.tag),
+        h('td', { class: 'mono text-mute' }, String(t.length).padStart(2, '0')),
+        h('td', null, tagName(t.tag, parent)),
+        h('td', { class: 'mono break-all' }, t.children ? '' : t.value),
+      ),
+      ...(t.children ? rows(t.children, t.tag, depth + 1) : []),
+    ]);
+  }
+
+  function render() {
+    const v = input.value.trim();
+    clear(out);
+    dyn.hidden = true;
+    clear(dynOut);
+    if (!v) return;
+    try {
+      const r = decodeQris(v);
+      const errors = r.issues.filter((i) => i.level === 'error');
+      const warns = r.issues.filter((i) => i.level === 'warning');
+      out.append(status(errors.length ? 'bad' : 'ok', errors.length ? `${errors.length} masalah ditemukan` : 'Struktur valid, CRC cocok'));
+      if (r.issues.length) {
+        out.append(h('ul', { class: 'space-y-1 text-sm' }, ...[...errors, ...warns].map((i) => h('li', { class: i.level === 'error' ? 'is-bad' : 'is-warn' }, i.message))));
+      }
+      const s = r.summary;
+      const facts: [string, string | undefined][] = [
+        ['Merchant', s.merchantName],
+        ['Kota', s.merchantCity],
+        ['Kode pos', s.postalCode],
+        ['Jenis QR', s.method],
+        ['Nominal', s.amount ? `Rp${Number(s.amount).toLocaleString('id-ID')}` : undefined],
+        ['NMID', s.nmid],
+        ['Kriteria', s.criteria],
+        ['MCC', s.mcc],
+        ['Penyelenggara', s.acquirers.join(', ') || undefined],
+        ['CRC', r.crc ? `${r.crc.actual} (hitungan: ${r.crc.expected})` : undefined],
+      ];
+      out.append(
+        h('dl', { class: 'grid grid-cols-[8rem_1fr] gap-x-4 gap-y-2 text-sm border-t border-ink pt-4' },
+          ...facts.filter(([, val]) => val).flatMap(([k, val]) => [h('dt', { class: 'text-mute' }, k), h('dd', { class: 'mono break-all' }, val!)])),
+      );
+      out.append(
+        h('div', { class: 'overflow-x-auto' },
+          h('table', { class: 'table min-w-[36rem]' },
+            h('thead', null, h('tr', null, h('th', null, 'Tag'), h('th', null, 'Pjg'), h('th', null, 'Arti'), h('th', null, 'Nilai'))),
+            h('tbody', null, ...rows(r.tags)))),
+      );
+      dyn.hidden = errors.length > 0;
+    } catch (e) {
+      out.append(status('bad', e instanceof Error ? e.message : 'String QRIS tidak bisa dibaca.'));
+    }
+  }
+
+  document.querySelector('#dyn-go')!.addEventListener('click', () => {
+    clear(dynOut);
+    const n = Number(amount.value.replace(/[.\s]/g, ''));
+    try {
+      const result = toDynamic(input.value, n);
+      const copy = h('button', { type: 'button', class: 'btn btn-ghost btn-sm' }, 'Salin');
+      bindCopy(copy, () => result);
+      dynOut.append(
+        h('div', { class: 'flex items-center justify-between gap-3 border border-b-0 border-line px-3 py-1.5' }, h('span', { class: 'mono text-xs text-mute' }, `QRIS dinamis Rp${n.toLocaleString('id-ID')}`), copy),
+        h('pre', { class: 'code whitespace-pre-wrap break-all' }, result),
+        h('p', { class: 't-small mt-2' }, 'Ubah string ini jadi gambar QR dengan generator QR apa saja.'),
+      );
+    } catch (e) {
+      dynOut.append(status('bad', e instanceof Error ? e.message : 'Gagal membuat QRIS dinamis.'));
+    }
+  });
+
+  bindMask(amount, formatRibuan);
+  input.addEventListener('input', render);
+</script>

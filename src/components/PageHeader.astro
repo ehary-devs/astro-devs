@@ -1,0 +1,31 @@
+---
+/** Header halaman: breadcrumb mono, baris badge (slot "meta"), judul dengan kata terakhir serif, dan lead. */
+import Icon from './Icon.astro';
+
+interface Props {
+  crumb: string;
+  heading: string;
+  lead?: string;
+}
+
+const { crumb, heading, lead } = Astro.props;
+const cut = heading.lastIndexOf(' ');
+const first = cut > 0 ? heading.slice(0, cut + 1) : heading;
+const last = cut > 0 ? heading.slice(cut + 1) : '';
+---
+
+<div class="border-b border-line-2 pb-10 pt-10 sm:pb-14 sm:pt-14">
+  <div class="wrap">
+    <div class="corners">
+      <nav aria-label="Breadcrumb" class="mono flex items-center gap-1.5 text-[0.75rem] uppercase tracking-[0.04em] text-mute">
+        <a class="inline-flex items-center gap-1 hover:text-ink" href="/"><Icon name="home" class="size-3.5" />Beranda</a>
+        <span aria-hidden="true" class="text-line-2">/</span>
+        <span aria-current="page" class="text-ink-2">{crumb}</span>
+      </nav>
+      {Astro.slots.has('meta') && <div class="mt-8 flex flex-wrap items-center gap-3"><slot name="meta" /></div>}
+      <h1 class="t-display mt-6 max-w-4xl !text-[clamp(2.25rem,1.5rem+2.8vw,3.75rem)]">{first}{last && <span class="serif">{last}</span>}</h1>
+      {lead && <p class="t-lead mt-5">{lead}</p>}
+      <slot />
+    </div>
+  </div>
+</div>

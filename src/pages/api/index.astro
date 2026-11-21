@@ -1,0 +1,117 @@
+---
+import Base from '../../layouts/Base.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import Icon from '../../components/Icon.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import { LIBUR } from '../../data/libur';
+
+type Ep = [path: string, desc: string];
+const groups: { title: string; icon: string; note: string; eps: Ep[] }[] = [
+  {
+    title: 'Hari libur',
+    icon: 'calendar-event',
+    note: 'SKB 3 Menteri, JSON',
+    eps: [['/api/libur.json', 'Semua tahun'], ...LIBUR.map((t): Ep => [`/api/libur/${t.tahun}.json`, `Libur dan cuti bersama ${t.tahun}`])],
+  },
+  {
+    title: 'Kalender',
+    icon: 'calendar',
+    note: 'iCalendar, bisa dilanggan',
+    eps: [
+      ['/kalender/libur-indonesia.ics', 'Libur + cuti bersama'],
+      ['/kalender/libur-nasional.ics', 'Libur nasional saja'],
+      ...LIBUR.map((t): Ep => [`/kalender/libur-${t.tahun}.ics`, `Tahun ${t.tahun}`]),
+    ],
+  },
+  {
+    title: 'Kode wilayah',
+    icon: 'map-pin',
+    note: 'Kepmendagri 2025, JSON',
+    eps: [
+      ['/api/wilayah/provinsi.json', '38 provinsi'],
+      ['/api/wilayah/kabupaten/{prov}.json', 'Kab/kota, contoh /kabupaten/33.json'],
+      ['/api/wilayah/kecamatan/{kab}.json', 'Kecamatan, contoh /kecamatan/33.74.json'],
+      ['/api/wilayah/desa/{kec}.json', 'Desa/kelurahan, contoh /desa/33.74.01.json'],
+    ],
+  },
+];
+
+const rules: [icon: string, title: string, text: string][] = [
+  ['lock-open', 'Tanpa API key', 'Gratis, tanpa daftar. CORS terbuka, bisa dipanggil langsung dari frontend.'],
+  ['bolt', 'Cache CDN 1 hari', 'File statis di CDN Cloudflare. Simpan juga di sisi kamu, datanya jarang berubah.'],
+  ['code', 'Format konsisten', 'Hanya GET. Tanggal ISO YYYY-MM-DD, kode wilayah bertitik sesuai Kepmendagri.'],
+  ['book-2', 'Sumber jelas', 'Setiap data punya dasar peraturan di halaman sumber data.'],
+];
+
+const curl = `curl -s https://devs.web.id/api/libur/2027.json \\
+  | jq '.data[] | select(.jenis == "libur") | .tanggal'`;
+---
+
+<Base title="Dokumentasi API" description="API JSON statis gratis untuk hari libur nasional Indonesia dan kode wilayah Kepmendagri 2025. Tanpa API key, bisa dipanggil langsung dari browser.">
+  <PageHeader
+    crumb="Dokumentasi API"
+    heading="Dokumentasi API"
+    lead="Semua endpoint berupa file JSON statis di CDN Cloudflare. Tidak perlu API key, dan bisa dipanggil dari frontend karena CORS terbuka untuk semua origin."
+  >
+    <Fragment slot="meta">
+      <Icon name="api" class="size-7" />
+      <span class="badge">JSON statis</span>
+      <span class="chip">GET</span>
+      <span class="chip">CORS *</span>
+      <span class="chip">Tanpa key</span>
+    </Fragment>
+  </PageHeader>
+
+  <div class="wrap mt-12">
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        rules.map(([icon, title, text]) => (
+          <li class="card p-5">
+            <Icon name={icon} class="size-6" />
+            <h2 class="mt-4 font-semibold tracking-[-0.01em]">{title}</h2>
+            <p class="mt-1.5 text-[0.9375rem] leading-relaxed text-ink-2">{text}</p>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="t-eyebrow mt-20">Endpoint</p>
+    <h2 class="t-h1 mt-3">Semua <span class="serif">endpoint.</span></h2>
+    <div class="mt-10 space-y-6">
+      {
+        groups.map((g) => (
+          <section class="card overflow-hidden" aria-labelledby={`g-${g.icon}`}>
+            <header class="flex flex-wrap items-center justify-between gap-3 border-b border-line-2 bg-wash px-5 py-3.5">
+              <h3 id={`g-${g.icon}`} class="inline-flex items-center gap-2.5 font-semibold">
+                <Icon name={g.icon} class="size-5" />
+                {g.title}
+              </h3>
+              <span class="t-eyebrow">{g.note}</span>
+            </header>
+            <ul>
+              {g.eps.map(([path, desc]) => (
+                <li class="grid gap-1 border-b border-line px-5 py-3.5 last:border-b-0 md:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)] md:items-center md:gap-6">
+                  <span class="flex min-w-0 items-center gap-3">
+                    <span class="badge shrink-0 !px-1.5 !text-[0.625rem]">GET</span>
+                    <code class="!border-0 !bg-transparent !p-0 mono truncate text-[0.875rem]">{path}</code>
+                  </span>
+                  <span class="text-[0.9375rem] text-ink-2 max-md:pl-[3.25rem]">{desc}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+
+    <div class="mt-20 grid grid-cols-[minmax(0,1fr)] items-start gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-16">
+      <div>
+        <p class="t-eyebrow">Contoh</p>
+        <h2 class="t-h1 mt-3">Ambil tanggal <span class="serif">libur.</span></h2>
+        <p class="t-lead mt-4">Filter hanya libur nasional (tanpa cuti bersama) tahun 2027 dengan <code>jq</code>.</p>
+        <a class="btn btn-ghost mt-6" href="/hari-libur/">Lihat data hari libur<Icon name="arrow-right" class="size-4" /></a>
+      </div>
+      <CodeBlock label="Shell" code={curl} />
+    </div>
+  </div>
+</Base>

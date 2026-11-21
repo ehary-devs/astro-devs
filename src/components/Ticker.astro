@@ -1,0 +1,26 @@
+---
+import { tools } from '../config/site';
+import { LIBUR } from '../data/libur';
+
+const years = LIBUR.map((l) => l.tahun);
+const items = [
+  `${tools.length} tools`,
+  'Wilayah Kepmendagri 2025',
+  `Libur ${Math.min(...years)}–${Math.max(...years)}`,
+  '0 data dikirim ke server',
+];
+---
+
+<div class="bg-ink text-[#b5b5bb]">
+  <div class="wrap flex h-8 items-center gap-4 overflow-hidden mono text-[0.6875rem] uppercase tracking-[0.06em]">
+    <span class="inline-flex shrink-0 items-center gap-1.5 text-paper"><span class="size-1.5 rounded-full bg-[#3ddc84]" aria-hidden="true"></span>Gratis</span>
+    {
+      items.map((t, i) => (
+        <span class:list={['shrink-0 whitespace-nowrap', i > 0 && 'max-sm:hidden']}>
+          <span class="mr-4 text-[#4a4a50]" aria-hidden="true">/</span>
+          {t}
+        </span>
+      ))
+    }
+  </div>
+</div>

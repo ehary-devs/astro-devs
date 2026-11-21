@@ -1,0 +1,74 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import PageHeader from '../../components/PageHeader.astro';
+
+const local: string[] = [
+  'NIK, NPWP, nomor HP, angka, dan string QRIS diproses oleh JavaScript di browser kamu.',
+  'Tidak ada formulir yang dikirim ke server, tidak ada database, dan input tidak dimasukkan ke URL.',
+  'Validator NIK mengunduh daftar kode wilayah satu kali, lalu mencocokkannya di perangkat kamu.',
+];
+const none: [icon: string, text: string][] = [
+  ['database-off', 'Database input'],
+  ['cookie-off', 'Cookie pelacak'],
+  ['eye-off', 'Iklan atau pixel'],
+  ['lock', 'Akun atau login'],
+];
+---
+
+<Base title="Privasi" description="devs.web.id tidak menyimpan NIK, NPWP, nomor HP, atau string QRIS yang kamu masukkan. Semua diproses di browser.">
+  <PageHeader crumb="Privasi" heading="Kebijakan privasi" lead="Data yang kamu ketik di tools ini tidak meninggalkan perangkat kamu.">
+    <Fragment slot="meta">
+      <Icon name="shield-check" class="size-7" />
+      <span class="badge">Diproses di browser</span>
+      <span class="chip">Tanpa cookie</span>
+    </Fragment>
+  </PageHeader>
+
+  <div class="wrap mt-12">
+    <ul class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {
+        none.map(([icon, text]) => (
+          <li class="card flex items-center gap-3 p-4">
+            <Icon name={icon} class="size-5 text-mute" />
+            <span class="text-[0.9375rem]">
+              <span class="mono mr-1.5 text-xs uppercase text-mute">Tidak ada</span>
+              <br class="sm:hidden" />
+              {text}
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="mt-12 grid gap-6 lg:grid-cols-2">
+      <section class="card p-6 sm:p-8">
+        <span class="inline-flex items-center gap-2"><Icon name="device-laptop" class="size-6" /><span class="t-eyebrow">Di perangkat kamu</span></span>
+        <h2 class="t-h2 mt-4">Yang terjadi pada input kamu</h2>
+        <ul class="mt-5 space-y-3">
+          {
+            local.map((t) => (
+              <li class="flex gap-3 text-ink-2">
+                <Icon name="check" class="mt-1 size-4 text-ok" />
+                <span>{t}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+      <section class="card p-6 sm:p-8">
+        <span class="inline-flex items-center gap-2"><Icon name="server" class="size-6" /><span class="t-eyebrow">Di server</span></span>
+        <h2 class="t-h2 mt-4">Yang dicatat server</h2>
+        <p class="mt-5 text-ink-2">
+          Situs ini disajikan oleh Cloudflare. Seperti semua situs, Cloudflare mencatat data teknis permintaan (alamat IP,
+          waktu, halaman yang dibuka) untuk keamanan dan statistik agregat. Situs ini tidak memasang cookie pelacak atau
+          iklan.
+        </p>
+      </section>
+    </div>
+
+    <p class="t-small mt-8">
+      Pertanyaan soal privasi: <a class="link text-ink" href="https://ehary.id" target="_blank" rel="noopener noreferrer">ehary.id</a>.
+    </p>
+  </div>
+</Base>
