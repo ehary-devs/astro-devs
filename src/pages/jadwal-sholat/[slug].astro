@@ -26,8 +26,8 @@ const namaPendek = kab.nama.replace(/^Kabupaten /, 'Kab. ').replace(/^Kota Admin
   slug="jadwal-sholat"
   crumb={namaPendek}
   heading={`Jadwal sholat ${namaPendek}`}
-  title={`Jadwal Sholat ${kab.nama} Hari Ini: Imsak, Subuh, Maghrib, Isya`}
-  description={`Jadwal sholat ${kab.nama}, ${kab.provNama} hari ini dan sebulan penuh: imsak, subuh, dzuhur, ashar, maghrib, isya (${z.zona}). Data resmi SIHAT Kementerian Agama RI.`}
+  title={`Jadwal Sholat ${kab.nama} Hari Ini`}
+  description={`Jadwal sholat ${kab.nama}, ${kab.provNama} hari ini dan sebulan penuh, dari imsak sampai isya (${z.zona}). Data resmi SIHAT Kemenag RI.`}
   lead={`${kab.provNama} · ${z.zona} · data resmi SIHAT Kementerian Agama RI.`}
 >
   <div id="jd" data-kode={kab.kode} data-tahun={meta.tahun.join(' ')} data-iana={z.iana} data-zona={z.zona}>

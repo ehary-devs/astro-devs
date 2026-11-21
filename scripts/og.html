@@ -1,0 +1,37 @@
+<!doctype html>
+<!-- Sumber public/og.png (1200x630). Render ulang: pnpm og -->
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face { font-family: Geist; src: url(../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2); font-weight: 100 900; }
+  @font-face { font-family: GeistMono; src: url(../node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2); font-weight: 100 900; }
+  @font-face { font-family: Serif; src: url(../node_modules/@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2); font-style: italic; }
+  * { margin: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; background: #fff; color: #0c0c0d; font-family: Geist, sans-serif; }
+  body { padding: 40px; }
+  .frame { position: relative; height: 100%; border: 1px solid #e4e4e7; padding: 56px 64px; display: flex; flex-direction: column; justify-content: space-between; }
+  .frame::before, .frame::after { content: ""; position: absolute; width: 14px; height: 14px; border: 2px solid #0c0c0d; }
+  .frame::before { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
+  .frame::after { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
+  .brand { display: flex; align-items: center; gap: 18px; font: 600 34px GeistMono, monospace; letter-spacing: -0.02em; }
+  .brand svg { width: 60px; height: 60px; }
+  .brand .dot { color: #ef3340; }
+  .brand .mute { color: #71717a; font-weight: 500; }
+  h1 { font-size: 84px; line-height: 1.02; font-weight: 600; letter-spacing: -0.035em; max-width: 960px; }
+  h1 span { font-family: Serif, serif; font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; font: 500 19px GeistMono, monospace; color: #3f3f46; }
+  .chips span { border: 1px solid #d4d4d8; padding: 6px 11px; }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="brand">
+      <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#0c0c0d"/><g fill="none" stroke="#fff" stroke-width="3.75" stroke-linecap="round"><circle cx="12.5" cy="18.5" r="6"/><path d="M18.5 6.75v17.75"/></g><circle cx="25" cy="22.6" r="2.5" fill="#ef3340"/></svg>
+      <div>devs<span class="dot">.</span><span class="mute">web.id</span></div>
+    </div>
+    <h1>Tools developer untuk data <span>Indonesia</span></h1>
+    <div class="chips"><span>QRIS</span><span>NIK</span><span>NPWP</span><span>Nomor HP</span><span>Plat nomor</span><span>Hari libur</span><span>Kode wilayah</span><span>Jadwal sholat</span></div>
+  </div>
+</body>
+</html>
