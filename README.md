@@ -1,6 +1,6 @@
 # devs.web.id
 
-Tools gratis untuk developer Indonesia: decoder QRIS, cek format NIK/NPWP, nomor HP, terbilang, hari libur (JSON + .ics), dan kode wilayah (JSON statis). Semua diproses di browser. Dibangun dari `astro-cf-starter` (Astro static + Cloudflare Workers Static Assets). Aturan wajib ada di `AGENTS.md`.
+Tools gratis untuk developer Indonesia: decoder QRIS, cek format NIK/NPWP, nomor HP, terbilang, hari libur (JSON + .ics), kode wilayah, dan jadwal sholat (JSON statis). Semua diproses di browser. Dibangun dari `astro-cf-starter` (Astro static + Cloudflare Workers Static Assets). Aturan wajib ada di `AGENTS.md`.
 
 ## Perintah
 
@@ -18,6 +18,7 @@ Tools gratis untuk developer Indonesia: decoder QRIS, cek format NIK/NPWP, nomor
 | :--- | :--- | :---- | :----- |
 | Hari libur | `src/data/libur.ts` | Tambah blok tahun baru setelah SKB 3 Menteri terbit (biasanya September). Halaman `/hari-libur/{tahun}/`, JSON, dan .ics dibuat otomatis. | setneg.go.id |
 | Kode wilayah | `data/wilayah.csv`, `data/meta.json` | Saat Kepmendagri kode wilayah baru terbit. Perbarui repo `data-wilayah`, lalu `make sync` di sana (menyalin CSV + meta ke sini setelah verifikasi lolos). Angka `expected` dibaca dari `meta.json`. | Lampiran Kepmendagri 300.2.2-2138/2025 jo. 300.2.2-2430/2025 (peraturan.bpk.go.id) |
+| Jadwal sholat | `public/api/jadwal-sholat/` | Setiap tahun (tambah tahun berikutnya), atau kalau Kemenag merevisi. Di repo `data-jadwal-sholat`: `make fetch build verify`, lalu `make sync`. | SIHAT Kemenag (bimasislam.kemenag.go.id) |
 | Prefix operator | `src/lib/phone.ts` | Kalau ada merger/prefix baru, atau MNP diberlakukan. | Situs operator |
 | Snippet di halaman | `src/snippets/*` | Setiap ubah, jalankan `pnpm test` (snippet dites terhadap library). | - |
 

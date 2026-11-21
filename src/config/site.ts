@@ -8,7 +8,7 @@ export type NavLink = { label: string; href: string; icon?: string };
 export const site = {
   name: 'devs.web.id',
   description:
-    'Tools gratis untuk developer Indonesia: decoder QRIS, cek format NIK, NPWP, dan NITKU, nomor HP, terbilang, generator data uji, API hari libur, kode wilayah, dan zona waktu. Semua diproses di browser.',
+    'Tools gratis untuk developer Indonesia: decoder QRIS, cek format NIK, NPWP, dan NITKU, nomor HP, terbilang, generator data uji, API hari libur, kode wilayah, jadwal sholat, dan zona waktu. Semua diproses di browser.',
   themeColor: '#ffffff',
   author: { name: 'ehary.id', href: 'https://ehary.id' },
 
@@ -46,5 +46,6 @@ export const tools: Tool[] = [
   { slug: 'data-uji', name: 'Generator data uji', desc: 'Data dummy NIK, NPWP, NITKU, dan nomor HP yang lolos validasi format, ekspor JSON atau CSV.', runs: 'browser', icon: 'dice-5', tags: ['Seeding', 'JSON', 'CSV'] },
   { slug: 'hari-libur', name: 'Hari libur nasional', desc: 'Libur dan cuti bersama dari SKB 3 Menteri, dalam JSON dan kalender .ics.', runs: 'api', icon: 'calendar-event', tags: ['JSON', '.ics', 'SKB'] },
   { slug: 'wilayah', name: 'Kode wilayah', desc: 'Provinsi sampai desa sesuai Kepmendagri 2025, sebagai JSON statis.', runs: 'api', icon: 'map-pin', tags: ['JSON', 'Kepmendagri'] },
+  { slug: 'jadwal-sholat', name: 'Jadwal sholat', desc: 'Jadwal sholat harian 514 kab/kota dari SIHAT Kemenag, dengan kode wilayah Kepmendagri.', runs: 'api', icon: 'building-mosque', tags: ['JSON', 'Kemenag', 'SIHAT'] },
   { slug: 'zona-waktu', name: 'Zona waktu per provinsi', desc: 'WIB, WITA, WIT untuk 38 provinsi dengan offset UTC dan nama zona IANA.', runs: 'api', icon: 'clock', tags: ['Keppres 41/1987', 'IANA', 'JSON'] },
 ];

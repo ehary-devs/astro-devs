@@ -1,0 +1,229 @@
+---
+import Tool from '../../layouts/Tool.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import Icon from '../../components/Icon.astro';
+import meta from '../../../public/api/jadwal-sholat/meta.json';
+
+const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+const usage = `const res = await fetch('https://devs.web.id/api/jadwal-sholat/${meta.tahun[0]}/33.74.json');
+const { nama, waktu, jadwal } = await res.json();
+// waktu:  ["imsak","subuh","terbit","dhuha","dzuhur","ashar","maghrib","isya"]
+// jadwal: { "${meta.tahun[0]}-01-01": ["03:53","04:03", ...], ... } jam waktu setempat`;
+---
+
+<Tool
+  slug="jadwal-sholat"
+  title={`Jadwal sholat ${meta.tahun.join(' & ')} untuk 514 kabupaten/kota, JSON dari data Kemenag`}
+  description="Jadwal imsak, subuh, terbit, dhuha, dzuhur, ashar, maghrib, dan isya untuk 514 kabupaten/kota Indonesia dari SIHAT Kementerian Agama RI, dengan kode wilayah Kepmendagri. JSON statis gratis tanpa API key."
+  lead="Jadwal resmi Kementerian Agama RI (SIHAT) untuk setiap kabupaten/kota, memakai kode wilayah Kepmendagri. Pilih wilayah untuk melihat jadwal hari ini dan sebulan penuh, atau panggil JSON-nya langsung."
+>
+  <div class="panel">
+    <form id="js-form" class="grid gap-4 sm:grid-cols-2" novalidate>
+      {
+        [
+          ['provinsi', 'Provinsi'],
+          ['kabupaten', 'Kabupaten/kota'],
+        ].map(([id, label], i) => (
+          <div>
+            <label class="label" for={`js-${id}`}>{label}</label>
+            <div class="field-wrap">
+              <Icon name="search" class="field-icon size-[1.125rem]" />
+              <input
+                id={`js-${id}`}
+                class="field font-sans pr-10"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                aria-controls={`js-${id}-list`}
+                autocomplete="off"
+                spellcheck="false"
+                disabled
+                placeholder={i === 0 ? 'Memuat...' : 'Pilih provinsi dulu'}
+              />
+              <Icon name="selector" class="field-icon-r size-[1.125rem]" />
+              <ul id={`js-${id}-list`} class="cb-list" role="listbox" aria-label={label} hidden />
+            </div>
+          </div>
+        ))
+      }
+      <div>
+        <label class="label" for="js-bulan">Bulan</label>
+        <select id="js-bulan" class="field font-sans" disabled data-tahun={meta.tahun.join(' ')}>
+          {meta.tahun.map((t) => BULAN.map((b, i) => <option value={`${t}-${String(i + 1).padStart(2, '0')}`}>{b} {t}</option>))}
+        </select>
+      </div>
+      <div id="js-titik-wrap" hidden>
+        <label class="label" for="js-titik">Titik</label>
+        <select id="js-titik" class="field font-sans"></select>
+      </div>
+    </form>
+    <div id="js-out" class="panel-out" aria-live="polite"></div>
+  </div>
+
+  <section class="mt-16 space-y-5">
+    <h2 class="t-h2">Endpoint</h2>
+    <div class="overflow-x-auto">
+      <table class="table min-w-[34rem]">
+        <thead><tr><th>Path</th><th>Isi</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">/api/jadwal-sholat/{'{tahun}'}/{'{kab}'}.json</td><td>Jadwal setahun satu kab/kota, contoh /{meta.tahun[0]}/33.74.json</td></tr>
+          <tr><td class="mono">/api/jadwal-sholat/meta.json</td><td>Tahun tersedia, sumber, tanggal ambil</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-ink-2 max-w-xl">
+      Kode kab/kota sama dengan <a class="link" href="/wilayah/">API kode wilayah</a>. Jam dalam waktu setempat (WIB/WITA/WIT). <code>lat</code>/<code>lng</code> adalah titik acuan hisab Kemenag. Beberapa kabupaten punya <code>titik</code> tambahan untuk pulau yang jauh dari ibu kotanya.
+    </p>
+    <CodeBlock label="JavaScript" code={usage} />
+  </section>
+
+  <Fragment slot="aside">
+    <section>
+      <h2 class="t-h3">Sumber</h2>
+      <p class="mt-3 text-ink-2">
+        <a class="link" href="https://bimasislam.kemenag.go.id/jadwal-sholat" target="_blank" rel="noopener noreferrer">Sistem Informasi Hisab Rukyat (SIHAT) Kemenag RI</a>, diambil {meta.diambil}. Lima kota administrasi Jakarta memakai satu titik yang sama, karena Kemenag hanya menerbitkan satu jadwal untuk DKI Jakarta.
+      </p>
+    </section>
+    <section>
+      <h2 class="t-h3">Cakupan</h2>
+      <dl class="mt-3 grid grid-cols-[1fr_auto] gap-y-1 text-ink-2">
+        <dt>Kabupaten/kota</dt><dd class="mono">{meta.kabkota}</dd>
+        <dt>Titik tambahan</dt><dd class="mono">{meta.titik_tambahan}</dd>
+        <dt>Tahun</dt><dd class="mono">{meta.tahun.join(', ')}</dd>
+      </dl>
+    </section>
+  </Fragment>
+</Tool>
+
+<script>
+  import { clear, h } from '../../lib/dom';
+  import { combobox, type Item } from '../../lib/combobox';
+  import { zonaOf } from '../../lib/zona';
+
+  type Lokasi = { nama: string; lat: number; lng: number; jadwal: Record<string, string[]> };
+  type Data = Lokasi & { kode: string; waktu: string[]; titik?: Lokasi[] };
+  const LABEL: Record<string, string> = { imsak: 'Imsak', subuh: 'Subuh', terbit: 'Terbit', dhuha: 'Dhuha', dzuhur: 'Dzuhur', ashar: 'Ashar', maghrib: 'Maghrib', isya: 'Isya' };
+
+  const out = document.querySelector<HTMLElement>('#js-out')!;
+  const bulan = document.querySelector<HTMLSelectElement>('#js-bulan')!;
+  const titikWrap = document.querySelector<HTMLElement>('#js-titik-wrap')!;
+  const titik = document.querySelector<HTMLSelectElement>('#js-titik')!;
+  const tahunAda = bulan.dataset.tahun!.split(' ');
+
+  let kab: Item | null = null;
+  const cache = new Map<string, Data | null>();
+  let want = '';
+
+  const getJSON = async (url: string) => {
+    // 404 ikut ter-cache sehari (Cache-Control di _headers): sekali gagal, minta ulang lewati cache.
+    let res = await fetch(url);
+    if (!res.ok) res = await fetch(url, { cache: 'reload' });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(String(res.status));
+    return res.json();
+  };
+
+  const prov = combobox(document.querySelector('#js-provinsi')!, document.querySelector('#js-provinsi-list')!, (it) => loadKab(it.value));
+  const kabBox = combobox(document.querySelector('#js-kabupaten')!, document.querySelector('#js-kabupaten-list')!, (it) => {
+    kab = it;
+    titik.value = '0';
+    show();
+  });
+  bulan.addEventListener('change', show);
+  titik.addEventListener('change', show);
+
+  async function fill(box: ReturnType<typeof combobox>, url: string, label: string) {
+    box.set([], 'Memuat...');
+    try {
+      const rows: { kode: string; nama: string }[] = await getJSON(url);
+      box.set(rows.map((r) => ({ value: r.kode, label: r.nama })), `Cari ${label} (${rows.length})`);
+    } catch {
+      box.set([], 'Gagal memuat. Muat ulang halaman.');
+    }
+  }
+
+  function loadKab(p: string) {
+    kab = null;
+    clear(out);
+    fill(kabBox, `/api/wilayah/kabupaten/${p}.json`, 'kabupaten/kota');
+  }
+
+  /** Tanggal & jam sekarang di zona kab/kota itu, bukan zona browser. */
+  function now(iana: string) {
+    const p = Object.fromEntries(
+      new Intl.DateTimeFormat('en-CA', { timeZone: iana, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+        .formatToParts(new Date())
+        .map((x) => [x.type, x.value]),
+    );
+    return { tgl: `${p.year}-${p.month}-${p.day}`, jam: `${p.hour}:${p.minute}` };
+  }
+
+  async function show() {
+    if (!kab) return;
+    const [tahun] = bulan.value.split('-');
+    const key = `${tahun}/${kab.value}`;
+    want = key;
+    if (!cache.has(key)) {
+      clear(out);
+      out.append(h('p', { class: 'status is-info' }, 'Memuat jadwal...'));
+      try {
+        cache.set(key, await getJSON(`/api/jadwal-sholat/${key}.json`));
+      } catch {
+        if (want === key) (clear(out), out.append(h('p', { class: 'status is-bad' }, 'Gagal memuat jadwal. Coba lagi.')));
+        return;
+      }
+    }
+    if (want !== key) return;
+    const d = cache.get(key);
+    clear(out);
+    if (!d) return out.append(h('p', { class: 'status is-warn' }, `Jadwal ${tahun} untuk ${kab.label} belum tersedia.`));
+
+    const lokasi: Lokasi[] = [d, ...(d.titik ?? [])];
+    titikWrap.hidden = lokasi.length < 2;
+    if (titik.options.length !== lokasi.length || titik.dataset.kode !== d.kode) {
+      titik.replaceChildren(...lokasi.map((l, i) => h('option', { value: String(i) }, l.nama)));
+      titik.dataset.kode = d.kode;
+    }
+    const L = lokasi[Number(titik.value) || 0];
+    const z = zonaOf(d.kode)!;
+    const n = now(z.iana);
+
+    const hari = L.jadwal[n.tgl];
+    if (hari) {
+      const next = hari.findIndex((t, i) => d.waktu[i] !== 'terbit' && d.waktu[i] !== 'dhuha' && t > n.jam);
+      out.append(
+        h('h3', { class: 't-h3' }, `Hari ini, ${n.tgl} (${z.zona})`),
+        h(
+          'ul',
+          { class: 'mt-3 grid grid-cols-4 gap-2 sm:grid-cols-8' },
+          ...d.waktu.map((w, i) =>
+            h(
+              'li',
+              { class: `rounded-[var(--r-sm)] border px-2 py-2 text-center ${i === next ? 'border-ink bg-wash' : 'border-line'}` },
+              h('span', { class: 'block text-xs text-mute' }, LABEL[w]),
+              h('span', { class: 'mono block font-semibold' }, hari[i]),
+            ),
+          ),
+        ),
+      );
+    }
+
+    const prefix = bulan.value;
+    const rows = Object.entries(L.jadwal).filter(([t]) => t.startsWith(prefix));
+    out.append(
+      h('div', { class: 'mt-6 overflow-x-auto' },
+        h('table', { class: 'table min-w-[40rem]' },
+          h('thead', null, h('tr', null, h('th', null, 'Tanggal'), ...d.waktu.map((w) => h('th', null, LABEL[w])))),
+          h('tbody', null, ...rows.map(([t, v]) => h('tr', t === n.tgl ? { class: 'bg-wash', 'aria-current': 'date' } : null, h('td', { class: 'mono' }, t.slice(8)), ...v.map((x) => h('td', { class: 'mono' }, x))))),
+        ),
+      ),
+      h('p', { class: 't-small mt-3' }, `Kode ${d.kode}. Titik acuan ${L.lat}, ${L.lng}. Waktu ${z.zona} (UTC${z.utc}).`),
+    );
+  }
+
+  // Default bulan = bulan berjalan (zona WIB cukup untuk memilih bulan), kalau tahunnya tersedia.
+  const ini = now('Asia/Jakarta').tgl.slice(0, 7);
+  if (tahunAda.includes(ini.slice(0, 4))) bulan.value = ini;
+  bulan.disabled = false;
+  fill(prov, '/api/wilayah/provinsi.json', 'provinsi');
+</script>

@@ -35,6 +35,15 @@ const groups: { title: string; icon: string; note: string; eps: Ep[] }[] = [
     ],
   },
   {
+    title: 'Jadwal sholat',
+    icon: 'building-mosque',
+    note: 'SIHAT Kemenag, JSON',
+    eps: [
+      ['/api/jadwal-sholat/{tahun}/{kab}.json', 'Setahun satu kab/kota, contoh /2026/33.74.json'],
+      ['/api/jadwal-sholat/meta.json', 'Tahun tersedia dan sumber'],
+    ],
+  },
+  {
     title: 'Zona waktu',
     icon: 'clock',
     note: 'Keppres 41/1987, JSON',
