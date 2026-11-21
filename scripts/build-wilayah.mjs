@@ -1,11 +1,19 @@
 // Ubah data/wilayah.csv jadi JSON statis di public/.
 // Sumber: repo data-wilayah (diturunkan dari lampiran Kepmendagri 300.2.2-2138/2025 jo. 300.2.2-2430/2025),
 // disalin ke sini dengan `make sync` di repo itu. Jalan otomatis sebelum dev/build. Output di-gitignore.
-import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const SRC = 'data/wilayah.csv';
 const API = 'public/api/wilayah';
+const LAST = 'public/data/wilayah-nik.json'; // ditulis paling akhir = penanda output lengkap
+
+// Hapus-tulis ulang ribuan file saat `astro dev` jalan bikin dev server kehilangan file (404). Lewati kalau output sudah baru.
+const mtime = (f) => statSync(f, { throwIfNoEntry: false })?.mtimeMs ?? 0;
+if (mtime(LAST) > Math.max(mtime(SRC), mtime('data/meta.json'), mtime(import.meta.filename))) {
+  console.log('wilayah: output sudah terbaru, dilewati');
+  process.exit(0);
+}
 
 // CSV dari Python csv module: field berisi koma/kutip dibungkus "..." dengan "" untuk kutip. Tanpa baris baru di nama.
 const parseLine = (line) => {
@@ -50,6 +58,6 @@ for (const [lvl, list] of [['kabupaten', kab], ['kecamatan', kec], ['desa', desa
 }
 
 // Peta ringkas untuk validator NIK (provinsi + kab/kota + kecamatan).
-write('public/data/wilayah-nik.json', Object.fromEntries([...prov, ...kab, ...kec].map((r) => [r.kode, r.nama])));
+write(LAST, Object.fromEntries([...prov, ...kab, ...kec].map((r) => [r.kode, r.nama])));
 
 console.log(`wilayah: ${prov.length} prov, ${kab.length} kab/kota, ${kec.length} kec, ${desa.length} desa`);

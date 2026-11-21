@@ -116,7 +116,11 @@ const desa      = await (await fetch(\`\${API}/desa/33.74.01.json\`)).json();
     want[i] = parent;
     boxes[i].set([], 'Memuat...');
     try {
-      const rows: Row[] = await (await fetch(url(i, parent))).json();
+      // 404 ikut ter-cache sehari (Cache-Control di _headers): sekali gagal, minta ulang lewati cache.
+    let res = await fetch(url(i, parent));
+    if (!res.ok) res = await fetch(url(i, parent), { cache: 'reload' });
+    if (!res.ok) throw new Error(String(res.status));
+    const rows: Row[] = await res.json();
       if (want[i] !== parent) return;
       boxes[i].set(rows.map((r) => ({ value: r.kode, label: r.nama })), `Cari ${levels[i]} (${rows.length})`);
     } catch {

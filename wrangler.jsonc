@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "devs-web-id",
+  "account_id": "919cbb126f7461b44695930aafa604f7",
   "compatibility_date": "2026-11-10",
   // Static only. Kalau nanti butuh /api: tambah "main", assets.binding "ASSETS",
   // dan assets.run_worker_first ["/api/*"] (lihat AGENTS.md §6).
