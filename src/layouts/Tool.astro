@@ -11,16 +11,18 @@ interface Props {
   /** Judul H1, kalau beda dari nama tool. */
   heading?: string;
   lead: string;
+  /** Halaman turunan tool (contoh satu kota): breadcrumb jadi Beranda / Tool / crumb. */
+  crumb?: string;
 }
 
-const { slug, title, description, heading, lead } = Astro.props;
+const { slug, title, description, heading, lead, crumb } = Astro.props;
 const tool = tools.find((t) => t.slug === slug);
 const others = tools.filter((t) => t.slug !== slug).slice(0, 4);
 const h1 = heading ?? tool?.name ?? '';
 ---
 
 <Base title={title} description={description}>
-  <PageHeader crumb={tool?.name ?? h1} heading={h1} lead={lead}>
+  <PageHeader crumb={crumb ?? tool?.name ?? h1} parent={crumb && tool ? { label: tool.name, href: `/${tool.slug}/` } : undefined} heading={h1} lead={lead}>
     {
       tool && (
         <Fragment slot="meta">

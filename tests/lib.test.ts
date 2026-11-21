@@ -309,3 +309,41 @@ test('toCsv escape', () => {
   assert.equal(toCsv([{ a: '1', b: 'x,y' }, { a: 'say "hi"', b: '' }]), 'a,b\n1,"x,y"\n"say ""hi""",');
   assert.equal(toCsv([]), '');
 });
+
+// --- Jadwal sholat ---
+import { slugOf, berikutnya, besok, sisaTeks, nowIn, rentang } from '../src/lib/jadwal.ts';
+
+test('slugOf: nama Kepmendagri jadi slug URL', () => {
+  assert.equal(slugOf('Kota Semarang'), 'kota-semarang');
+  assert.equal(slugOf('Kota Administrasi Jakarta Pusat'), 'kota-jakarta-pusat');
+  assert.equal(slugOf('Kabupaten Administrasi Kepulauan Seribu'), 'kabupaten-kepulauan-seribu');
+  assert.equal(slugOf('Kabupaten Kep. Siau Tagulandang Biaro'), 'kabupaten-kep-siau-tagulandang-biaro');
+});
+
+test('slugOf: 514 kab/kota di data unik', () => {
+  const rows = readFileSync('data/wilayah.csv', 'utf8').trim().split('\n').slice(1);
+  const kab = rows.map((l) => l.split(',')).filter(([k]) => /^\d{2}\.\d{2}$/.test(k));
+  assert.equal(kab.length, 514);
+  assert.equal(new Set(kab.map(([, n]) => slugOf(n.replace(/"/g, '')))).size, 514);
+});
+
+test('berikutnya: sholat wajib berikutnya, lewati terbit/dhuha, isya -> subuh besok', () => {
+  const W = ['imsak', 'subuh', 'terbit', 'dhuha', 'dzuhur', 'ashar', 'maghrib', 'isya'];
+  const J = {
+    '2026-12-31': ['03:40', '03:50', '05:10', '05:40', '11:40', '15:00', '18:00', '19:10'],
+    '2027-01-01': ['03:41', '03:51', '05:11', '05:41', '11:41', '15:01', '18:01', '19:11'],
+  };
+  assert.deepEqual(berikutnya(W, J, '2026-12-31', '06:00'), { waktu: 'dzuhur', jam: '11:40', tgl: '2026-12-31', sisa: 340 });
+  assert.equal(berikutnya(W, J, '2026-12-31', '03:45')?.waktu, 'subuh'); // imsak bukan sholat
+  assert.deepEqual(berikutnya(W, J, '2026-12-31', '20:00'), { waktu: 'subuh', jam: '03:51', tgl: '2027-01-01', sisa: 471 });
+  assert.equal(berikutnya(W, J, '2027-01-01', '20:00'), null);
+  assert.equal(besok('2028-02-28'), '2028-02-29');
+});
+
+test('sisaTeks, nowIn, rentang', () => {
+  assert.equal(sisaTeks(5), '5 menit lagi');
+  assert.equal(sisaTeks(120), '2 jam lagi');
+  assert.equal(sisaTeks(75), '1 jam 15 menit lagi');
+  assert.deepEqual(nowIn('Asia/Jayapura', new Date('2026-11-21T15:45:00Z')), { tgl: '2026-11-22', jam: '00:45' });
+  assert.equal(rentang([['a', ['03:53']], ['b', ['03:49']]], 0), '03:49–03:53');
+});

@@ -6,9 +6,11 @@ interface Props {
   crumb: string;
   heading: string;
   lead?: string;
+  /** Level di antara Beranda dan halaman ini. */
+  parent?: { label: string; href: string };
 }
 
-const { crumb, heading, lead } = Astro.props;
+const { crumb, heading, lead, parent } = Astro.props;
 const cut = heading.lastIndexOf(' ');
 const first = cut > 0 ? heading.slice(0, cut + 1) : heading;
 const last = cut > 0 ? heading.slice(cut + 1) : '';
@@ -20,6 +22,8 @@ const last = cut > 0 ? heading.slice(cut + 1) : '';
       <nav aria-label="Breadcrumb" class="mono flex items-center gap-1.5 text-[0.75rem] uppercase tracking-[0.04em] text-mute">
         <a class="inline-flex items-center gap-1 hover:text-ink" href="/"><Icon name="home" class="size-3.5" />Beranda</a>
         <span aria-hidden="true" class="text-line-2">/</span>
+        {parent && <a class="hover:text-ink" href={parent.href}>{parent.label}</a>}
+        {parent && <span aria-hidden="true" class="text-line-2">/</span>}
         <span aria-current="page" class="text-ink-2">{crumb}</span>
       </nav>
       {Astro.slots.has('meta') && <div class="mt-8 flex flex-wrap items-center gap-3"><slot name="meta" /></div>}

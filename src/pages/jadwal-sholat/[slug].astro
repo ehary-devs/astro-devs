@@ -1,0 +1,110 @@
+---
+import Tool from '../../layouts/Tool.astro';
+import { KAB, PROV, meta, readJadwal, type Kab } from '../../lib/jadwal-data';
+import { BULAN, LABEL, WAJIB, bulanRows, hariPendek, nowIn, rentang } from '../../lib/jadwal';
+import { zonaOf } from '../../lib/zona';
+
+export function getStaticPaths() {
+  return KAB.map((kab) => ({ params: { slug: kab.slug }, props: { kab } }));
+}
+
+const { kab } = Astro.props as { kab: Kab };
+const z = zonaOf(kab.kode)!;
+// Bulan yang di-render ke HTML (untuk mesin pencari); browser menggantinya dengan bulan berjalan.
+const now = nowIn('Asia/Jakarta').tgl;
+const tahun = meta.tahun.includes(Number(now.slice(0, 4))) ? Number(now.slice(0, 4)) : meta.tahun[meta.tahun.length - 1];
+const ym = tahun === Number(now.slice(0, 4)) ? now.slice(0, 7) : `${tahun}-01`;
+const d = readJadwal(tahun, kab.kode);
+const rows = bulanRows(d.jadwal, ym);
+const ringkas = ['subuh', 'maghrib', 'isya'].map((w) => `${LABEL[w]} ${rentang(rows, d.waktu.indexOf(w))}`).join(' · ');
+const bulanLabel = `${BULAN[Number(ym.slice(5)) - 1]} ${tahun}`;
+const tetangga = PROV.find((p) => p.kode === kab.prov)!.kab.filter((k) => k.kode !== kab.kode);
+const namaPendek = kab.nama.replace(/^Kabupaten /, 'Kab. ').replace(/^Kota Administrasi /, 'Kota ');
+---
+
+<Tool
+  slug="jadwal-sholat"
+  crumb={namaPendek}
+  heading={`Jadwal sholat ${namaPendek}`}
+  title={`Jadwal Sholat ${kab.nama} Hari Ini: Imsak, Subuh, Maghrib, Isya`}
+  description={`Jadwal sholat ${kab.nama}, ${kab.provNama} hari ini dan sebulan penuh: imsak, subuh, dzuhur, ashar, maghrib, isya (${z.zona}). Data resmi SIHAT Kementerian Agama RI.`}
+  lead={`${kab.provNama} · ${z.zona} · data resmi SIHAT Kementerian Agama RI.`}
+>
+  <div id="jd" data-kode={kab.kode} data-tahun={meta.tahun.join(' ')} data-iana={z.iana} data-zona={z.zona}>
+    <section class="panel" aria-label="Jadwal hari ini">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p id="jd-tanggal" class="mono text-[0.8125rem] uppercase tracking-[0.04em] text-mute">{z.zona}</p>
+        {
+          d.titik && (
+            <label class="flex items-center gap-2 text-sm text-ink-2">
+              Titik
+              <select id="jd-titik" class="field !w-auto !py-1.5 font-sans text-sm">
+                {[d, ...d.titik].map((l, i) => <option value={String(i)}>{i === 0 ? namaPendek : l.nama.replace(/ KAB\. .*$/, '').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}</option>)}
+              </select>
+            </label>
+          )
+        }
+      </div>
+      <div id="jd-next" class="mt-4 bg-ink p-6 text-paper sm:p-8" aria-live="polite">
+        <p class="mono text-[0.75rem] uppercase tracking-[0.08em] text-paper/60">Sholat berikutnya</p>
+        <p class="mt-3 text-2xl font-semibold">Memuat...</p>
+      </div>
+      <ol id="jd-hari" class="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-8"></ol>
+    </section>
+
+    <section class="mt-14">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <h2 class="t-h2">Jadwal <span id="jd-bulan-label">{bulanLabel}</span></h2>
+        <label class="sr-only" for="jd-bulan">Pilih bulan</label>
+        <select id="jd-bulan" class="field !w-auto font-sans">
+          {meta.tahun.map((t) => BULAN.map((b, i) => <option value={`${t}-${String(i + 1).padStart(2, '0')}`} selected={`${t}-${String(i + 1).padStart(2, '0')}` === ym}>{b} {t}</option>))}
+        </select>
+      </div>
+      <p id="jd-ringkas" class="mt-3 text-ink-2">{ringkas}</p>
+      <div class="mt-5 overflow-x-auto">
+        <table class="table min-w-[38rem]">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              {d.waktu.map((w) => <th class:list={[!WAJIB.has(w) && 'font-normal']}>{LABEL[w]}</th>)}
+            </tr>
+          </thead>
+          <tbody id="jd-tbody">
+            {
+              rows.map(([t, v]) => (
+                <tr>
+                  <td class="whitespace-nowrap"><span class="mono">{t.slice(8)}</span> <span class={hariPendek(t) === 'Jum' ? 'text-brand' : 'text-mute'}>{hariPendek(t)}</span></td>
+                  {v.map((x, i) => <td class:list={['mono', !WAJIB.has(d.waktu[i]) && 'text-mute']}>{x}</td>)}
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="t-small mt-3">
+        Kode wilayah <span class="mono">{kab.kode}</span>. <span id="jd-titik-info">Titik acuan {d.lat}, {d.lng}</span>. Jam {z.zona} (UTC{z.utc}). JSON:
+        <a class="link mono" href={`/api/jadwal-sholat/${tahun}/${kab.kode}.json`}>/api/jadwal-sholat/{tahun}/{kab.kode}.json</a>
+      </p>
+    </section>
+  </div>
+
+  <Fragment slot="aside">
+    <section>
+      <h2 class="t-h3">Sumber</h2>
+      <p class="mt-3 text-ink-2">
+        <a class="link" href="https://bimasislam.kemenag.go.id/jadwal-sholat" target="_blank" rel="noopener noreferrer">SIHAT Kementerian Agama RI</a>, diambil {meta.diambil}.
+        {kab.prov === '31' && ' Kemenag menerbitkan satu jadwal untuk seluruh DKI Jakarta.'}
+      </p>
+    </section>
+    <section>
+      <h2 class="t-h3">Lainnya di {kab.provNama}</h2>
+      <ul class="mt-3 max-h-80 space-y-1 overflow-y-auto pr-2">
+        {tetangga.map((k) => <li><a class="text-ink-2 hover:text-ink hover:underline" href={`/jadwal-sholat/${k.slug}/`}>{k.nama}</a></li>)}
+      </ul>
+    </section>
+  </Fragment>
+</Tool>
+
+<script>
+  import '../../scripts/jadwal-sholat';
+</script>
