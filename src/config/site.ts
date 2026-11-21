@@ -8,7 +8,7 @@ export type NavLink = { label: string; href: string; icon?: string };
 export const site = {
   name: 'devs.web.id',
   description:
-    'Tools gratis untuk developer Indonesia: decoder QRIS, cek format NIK, NPWP, dan NITKU, nomor HP, plat nomor, terbilang, generator data uji, API hari libur, kode wilayah, jadwal sholat, dan zona waktu. Semua diproses di browser.',
+    'Tools gratis untuk developer Indonesia: decoder QRIS, cek NIK, NPWP, nomor HP, plat nomor, terbilang, data uji, API hari libur, kode wilayah, dan jadwal sholat.',
   themeColor: '#ffffff',
   author: { name: 'ehary.id', href: 'https://ehary.id' },
 
