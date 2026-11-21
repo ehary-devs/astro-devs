@@ -59,3 +59,10 @@ echo json_encode(["t" => array_map('terbilang', $d["nums"]), "c" => array_map('c
   assert.deepEqual(res.t, expected);
   assert.deepEqual(res.c, crcExpected);
 });
+
+test('snippet JS zona waktu sama dengan library', async () => {
+  const { zonaOf } = await import('../src/lib/zona.ts');
+  const fn = new Function(`${read('zona.js')}; return zonaWaktu;`)();
+  for (let p = 10; p <= 99; p++) assert.equal(fn(String(p)), zonaOf(String(p))?.zona ?? null, String(p));
+  assert.equal(fn('7371011708900001'), 'WITA');
+});

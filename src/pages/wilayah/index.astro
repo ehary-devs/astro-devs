@@ -98,6 +98,7 @@ const desa      = await (await fetch(\`\${API}/desa/33.74.01.json\`)).json();
 <script>
   import { clear, h, kv } from '../../lib/dom';
   import { combobox, type Item } from '../../lib/combobox';
+  import { zonaOf } from '../../lib/zona';
 
   type Row = { kode: string; nama: string };
   const levels = ['provinsi', 'kabupaten', 'kecamatan', 'desa'] as const;
@@ -136,7 +137,8 @@ const desa      = await (await fetch(\`\${API}/desa/33.74.01.json\`)).json();
       boxes[j].set([], 'Pilih yang di atas dulu');
     }
     clear(out);
-    out.append(kv(picked.map((p, k) => [`Kode ${levels[k]}`, `${p.value}  ${p.label}`])));
+    const z = zonaOf(picked[0].value);
+    out.append(kv([...picked.map((p, k): [string, string] => [`Kode ${levels[k]}`, `${p.value}  ${p.label}`]), ['Zona waktu', z ? `${z.zona} (UTC${z.utc}, ${z.iana})` : '-']]));
     if (i === 2) out.append(h('p', { class: 't-small mt-3' }, `Awalan NIK untuk kecamatan ini: ${it.value.replace(/\./g, '')}`));
     if (i < boxes.length - 1) fill(i + 1, it.value);
   }

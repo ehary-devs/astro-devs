@@ -115,6 +115,15 @@ export function validateNpwp(input: string): NpwpResult {
     });
     return { valid: true, digits, formatted: digits, type: badan ? 'NPWP 16 digit (badan)' : 'NPWP 16 digit (NIK)', checks };
   }
-  checks.push({ ok: false, level: 'error', message: `NPWP harus 15 atau 16 digit angka, ditemukan ${digits.length}.` });
+  // NITKU (PER-6/PJ/2024, contoh di lampiran): NPWP 16 digit pusat + 6 digit urut. Pusat 000000, cabang 000001 dst.
+  if (/^\d{22}$/.test(digits)) {
+    const npwp = digits.slice(0, 16);
+    const tku = digits.slice(16);
+    const pusat = tku === '000000';
+    checks.push({ ok: true, level: 'info', message: `NPWP 16 digit: ${npwp} (${npwp.startsWith('0') ? 'badan/instansi' : 'NIK orang pribadi'}).` });
+    checks.push({ ok: true, level: 'info', message: pusat ? 'Akhiran 000000: tempat kegiatan usaha pusat.' : `Akhiran ${tku}: tempat kegiatan usaha ke-${Number(tku)} (cabang).` });
+    return { valid: true, digits, formatted: `${npwp} ${tku}`, type: `NITKU 22 digit (${pusat ? 'pusat' : 'cabang'})`, checks };
+  }
+  checks.push({ ok: false, level: 'error', message: `NPWP harus 15 atau 16 digit angka (NITKU 22 digit), ditemukan ${digits.length}.` });
   return { valid: false, digits, formatted: '', type: '-', checks };
 }

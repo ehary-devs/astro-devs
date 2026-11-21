@@ -14,10 +14,10 @@ export function maskNik(s: string) {
   return [d.slice(0, 6), d.slice(6, 12), d.slice(12)].filter(Boolean).join(' ');
 }
 
-/** NPWP: sampai 15 digit pakai pola lama 99.999.999.9-999.999, 16 digit dikelompokkan 4-4-4-4. */
+/** NPWP: sampai 15 digit pakai pola lama 99.999.999.9-999.999, 16 digit dikelompokkan 4-4-4-4, NITKU 22 digit = 16 digit + spasi + 6 digit. */
 export function maskNpwp(s: string) {
-  const d = digitsOnly(s).slice(0, 16);
-  if (d.length === 16) return d.match(/.{4}/g)!.join(' ');
+  const d = digitsOnly(s).slice(0, 22);
+  if (d.length >= 16) return [...d.slice(0, 16).match(/.{4}/g)!, d.slice(16)].filter(Boolean).join(' ');
   const cuts: [number, number, string][] = [[0, 2, ''], [2, 5, '.'], [5, 8, '.'], [8, 9, '.'], [9, 12, '-'], [12, 15, '.']];
   let out = '';
   for (const [a, b, sep] of cuts) {

@@ -34,6 +34,12 @@ const groups: { title: string; icon: string; note: string; eps: Ep[] }[] = [
       ['/api/wilayah/desa/{kec}.json', 'Desa/kelurahan, contoh /desa/33.74.01.json'],
     ],
   },
+  {
+    title: 'Zona waktu',
+    icon: 'clock',
+    note: 'Keppres 41/1987, JSON',
+    eps: [['/api/zona-waktu.json', '38 provinsi: zona, offset UTC, nama IANA']],
+  },
 ];
 
 const rules: [icon: string, title: string, text: string][] = [
@@ -47,7 +53,7 @@ const curl = `curl -s https://devs.web.id/api/libur/2027.json \\
   | jq '.data[] | select(.jenis == "libur") | .tanggal'`;
 ---
 
-<Base title="Dokumentasi API" description="API JSON statis gratis untuk hari libur nasional Indonesia dan kode wilayah Kepmendagri 2025. Tanpa API key, bisa dipanggil langsung dari browser.">
+<Base title="Dokumentasi API" description="API JSON statis gratis untuk hari libur nasional Indonesia, kode wilayah Kepmendagri 2025, dan zona waktu per provinsi. Tanpa API key, bisa dipanggil langsung dari browser.">
   <PageHeader
     crumb="Dokumentasi API"
     heading="Dokumentasi API"

@@ -23,6 +23,10 @@
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=86400
 
+/api/zona-waktu.json
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=86400
+
 /api/wilayah/*
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=86400

@@ -16,18 +16,18 @@ npwp16('01.234.567.8-901.000'); // "0012345678901000"`;
 
 <Tool
   slug="npwp"
-  title="Cek format NPWP 15 dan 16 digit"
-  description="Kenali format NPWP lama (15 digit) dan baru (16 digit), kode KPP, status pusat/cabang, dan konversi ke NPWP 16 digit sesuai PMK 112/2022."
-  lead="Masukkan NPWP dengan atau tanpa titik dan strip. Format lama 15 digit dan format baru 16 digit sama-sama dikenali."
+  title="Cek format NPWP 15 dan 16 digit, dan NITKU 22 digit"
+  description="Kenali format NPWP lama (15 digit), NPWP 16 digit, dan NITKU 22 digit: kode KPP, status pusat/cabang, dan konversi ke NPWP 16 digit sesuai PMK 112/2022 dan PER-6/PJ/2024."
+  lead="Masukkan NPWP atau NITKU dengan atau tanpa titik dan strip. Format lama 15 digit, NPWP 16 digit, dan NITKU 22 digit sama-sama dikenali."
 >
   <div class="panel">
     <form class="max-w-md" novalidate>
-      <label class="label" for="npwp-in">NPWP</label>
+      <label class="label" for="npwp-in">NPWP atau NITKU</label>
       <div class="field-wrap">
         <Icon name="receipt-tax" class="field-icon" />
-        <input id="npwp-in" class="field text-lg tracking-wider" inputmode="numeric" maxlength="24" autocomplete="off" spellcheck="false" placeholder="01.234.567.8-901.000" aria-describedby="npwp-hint" />
+        <input id="npwp-in" class="field text-lg tracking-wider" inputmode="numeric" maxlength="32" autocomplete="off" spellcheck="false" placeholder="01.234.567.8-901.000" aria-describedby="npwp-hint" />
       </div>
-      <p id="npwp-hint" class="t-small mt-2">Titik dan strip ditambahkan otomatis. 16 digit dikelompokkan per 4 angka.</p>
+      <p id="npwp-hint" class="t-small mt-2">Titik dan strip ditambahkan otomatis. 16 digit dikelompokkan per 4 angka, NITKU diberi jeda sebelum 6 digit terakhir.</p>
     </form>
     <div id="npwp-out" class="panel-out space-y-4" aria-live="polite"></div>
   </div>
@@ -39,6 +39,21 @@ npwp16('01.234.567.8-901.000'); // "0012345678901000"`;
       badan dan instansi pemerintah yang sudah punya NPWP lama memakai NPWP 16 digit, yaitu angka 0 diikuti NPWP 15
       digit lama. Cabang tidak lagi punya NPWP sendiri dan memakai NITKU.
     </p>
+    <h2 class="t-h2 mt-12">NITKU 22 digit</h2>
+    <p class="mt-3 text-ink-2">
+      NITKU (Nomor Identitas Tempat Kegiatan Usaha) terdiri dari NPWP 16 digit pusat ditambah 6 digit nomor urut.
+      Lampiran PER-6/PJ/2024 memberi contoh: pusat berakhiran <code>000000</code>, cabang pertama <code>000001</code>.
+      Untuk cabang, 16 digit depannya tetap NPWP pusat, bukan NPWP cabang lama.
+    </p>
+    <table class="table mt-5">
+      <thead><tr><th>Contoh lampiran PER-6/PJ/2024</th><th>NITKU</th></tr></thead>
+      <tbody>
+        <tr><td>Badan, pusat</td><td class="mono">0123456789072000000000</td></tr>
+        <tr><td>Badan, cabang</td><td class="mono">0123456789072000000001</td></tr>
+        <tr><td>Orang pribadi, pusat</td><td class="mono">3111111111111111000000</td></tr>
+        <tr><td>Orang pribadi, cabang</td><td class="mono">3111111111111111000001</td></tr>
+      </tbody>
+    </table>
     <h2 class="t-h2 mt-12">NPWP 15 digit (format lama)</h2>
     <table class="table mt-5">
       <thead><tr><th>Digit</th><th>Isi</th></tr></thead>
@@ -61,12 +76,13 @@ npwp16('01.234.567.8-901.000'); // "0012345678901000"`;
       <ul class="mt-3 space-y-2 text-ink-2">
         <li>PMK 112/PMK.03/2022 tentang NPWP bagi orang pribadi, badan, dan instansi pemerintah.</li>
         <li>PMK 136 Tahun 2023: berlaku penuh 1 Juli 2024.</li>
+        <li>PER-6/PJ/2024: NIK sebagai NPWP, NPWP 16 digit, dan NITKU dalam layanan administrasi perpajakan.</li>
         <li>Struktur 15 digit: DJP, mengacu SE-60/PJ/2013.</li>
       </ul>
     </section>
     <section>
       <h2 class="t-h3">Yang tidak dicek</h2>
-      <p class="mt-3 text-ink-2">Ini cek format, bukan cek status di DJP. Untuk memastikan NPWP terdaftar, pakai layanan resmi DJP.</p>
+      <p class="mt-3 text-ink-2">Ini cek format, bukan cek status di DJP. Untuk memastikan NPWP atau NITKU terdaftar, pakai layanan resmi DJP.</p>
     </section>
   </Fragment>
 </Tool>
@@ -84,7 +100,7 @@ npwp16('01.234.567.8-901.000'); // "0012345678901000"`;
     clear(out);
     if (!input.value.trim()) return;
     const r = validateNpwp(input.value);
-    out.append(status(r.valid ? 'ok' : 'bad', r.valid ? r.type : 'Format NPWP tidak valid'));
+    out.append(status(r.valid ? 'ok' : 'bad', r.valid ? r.type : 'Format NPWP/NITKU tidak valid'));
     if (r.valid) {
       const rows: [string, string][] = [['Ditulis', r.formatted]];
       if (r.digits.length === 15) rows.push(['16 digit', '0' + r.digits]);

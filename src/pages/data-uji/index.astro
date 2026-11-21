@@ -1,0 +1,135 @@
+---
+import Tool from '../../layouts/Tool.astro';
+import Icon from '../../components/Icon.astro';
+---
+
+<Tool
+  slug="data-uji"
+  title="Generator data dummy Indonesia: NIK, NPWP, NITKU, nomor HP valid format"
+  description="Buat data uji fiktif dengan format valid untuk seeding database dan QA: NIK dengan kode kecamatan Kepmendagri 2025, NPWP 16 digit, NITKU, nomor HP dengan prefix operator. Ekspor JSON atau CSV, bisa pakai seed."
+  lead="Data fiktif yang lolos validasi format: NIK dengan kode kecamatan dan tanggal lahir yang ada, NPWP 16 digit, NITKU pusat, dan nomor HP dengan prefix operator. Isi seed supaya hasilnya sama setiap kali dibuat."
+>
+  <div class="panel">
+    <form id="du-form" class="grid gap-4 sm:grid-cols-[8rem_minmax(0,12rem)_auto] sm:items-end" novalidate>
+      <div>
+        <label class="label" for="du-n">Jumlah</label>
+        <input id="du-n" class="field" type="number" inputmode="numeric" min="1" max="100" value="10" />
+      </div>
+      <div>
+        <label class="label" for="du-seed">Seed (opsional)</label>
+        <input id="du-seed" class="field" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="acak" aria-describedby="du-hint" />
+      </div>
+      <button class="btn" type="submit"><Icon name="refresh" class="size-4" />Buat data</button>
+    </form>
+    <p id="du-hint" class="t-small mt-2">Maksimal 100 baris. Seed berupa angka bulat; kosongkan untuk data acak.</p>
+    <div class="mt-5 flex flex-wrap gap-2">
+      <button id="du-json" type="button" class="btn btn-sm btn-ghost" disabled><Icon name="copy" class="size-3.5" /><span data-label>Salin JSON</span></button>
+      <button id="du-csv" type="button" class="btn btn-sm btn-ghost" disabled><Icon name="table" class="size-3.5" /><span data-label>Salin CSV</span></button>
+    </div>
+    <div id="du-out" class="panel-out overflow-x-auto" aria-live="polite"></div>
+  </div>
+
+  <section class="mt-16 max-w-2xl space-y-3 text-ink-2">
+    <h2 class="t-h2 text-ink">Cara datanya dibuat</h2>
+    <p>
+      <strong>NIK</strong>: 6 digit kode kecamatan diambil acak dari Kepmendagri 2025, tanggal lahir usia 17-70 tahun
+      (perempuan ditambah 40), dan nomor urut 0001-9999. Struktur mengikuti PP 40/2019 Pasal 31.
+    </p>
+    <p><strong>NPWP</strong>: untuk orang pribadi penduduk, NPWP 16 digit sama dengan NIK (PMK 112/2022 jo. PMK 136/2023).</p>
+    <p><strong>NITKU</strong>: NPWP 16 digit ditambah <code>000000</code> untuk tempat kegiatan usaha pusat, seperti contoh di lampiran PER-6/PJ/2024.</p>
+    <p><strong>Nomor HP</strong>: prefix operator seluler yang sama dengan tool Cek nomor HP, total 11-12 digit.</p>
+    <p>
+      Setiap baris lolos validator di <a class="link" href="/nik/">Cek format NIK</a>,
+      <a class="link" href="/npwp/">Cek format NPWP</a>, dan <a class="link" href="/nomor-hp/">Cek nomor HP</a>.
+    </p>
+  </section>
+
+  <Fragment slot="aside">
+    <section>
+      <h2 class="t-h3">Hanya untuk pengujian</h2>
+      <p class="mt-3 text-ink-2">
+        Angka dibuat acak, jadi bisa kebetulan sama dengan NIK atau nomor HP milik orang sungguhan. Pakai hanya di
+        lingkungan development dan QA. Jangan dipakai untuk mendaftar layanan, mengirim SMS/WhatsApp, atau mengaku
+        sebagai orang lain.
+      </p>
+    </section>
+    <section>
+      <h2 class="t-h3">Yang tidak dibuat</h2>
+      <p class="mt-3 text-ink-2">Nama orang, alamat jalan, desa, dan NPWP badan. Data dibuat di browser, tidak ada yang dikirim ke server.</p>
+    </section>
+  </Fragment>
+</Tool>
+
+<script>
+  import { fakeOrang, kecamatanOf, mulberry32, toCsv, type Orang } from '../../lib/datauji';
+  import type { Wilayah } from '../../lib/nik';
+  import { h, clear, status, bindCopy } from '../../lib/dom';
+
+  const form = document.querySelector<HTMLFormElement>('#du-form')!;
+  const nIn = document.querySelector<HTMLInputElement>('#du-n')!;
+  const seedIn = document.querySelector<HTMLInputElement>('#du-seed')!;
+  const out = document.querySelector<HTMLElement>('#du-out')!;
+  const btnJson = document.querySelector<HTMLButtonElement>('#du-json')!;
+  const btnCsv = document.querySelector<HTMLButtonElement>('#du-csv')!;
+  let rows: Orang[] = [];
+  let data: Promise<{ w: Wilayah; kecs: string[] }> | null = null;
+
+  const load = () =>
+    (data ??= fetch('/data/wilayah-nik.json')
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
+      .then((w: Wilayah) => ({ w, kecs: kecamatanOf(w) })));
+
+  const cols: [keyof Orang, string][] = [
+    ['nik', 'NIK'],
+    ['jenis_kelamin', 'JK'],
+    ['tanggal_lahir', 'Lahir'],
+    ['kecamatan', 'Kecamatan'],
+    ['kabupaten', 'Kab/kota'],
+    ['provinsi', 'Provinsi'],
+    ['hp', 'Nomor HP'],
+    ['operator', 'Operator'],
+    ['nitku', 'NITKU'],
+  ];
+
+  async function generate() {
+    const n = Math.min(100, Math.max(1, Math.trunc(Number(nIn.value)) || 10));
+    nIn.value = String(n);
+    const seedRaw = seedIn.value.trim();
+    if (seedRaw && !/^\d{1,10}$/.test(seedRaw)) {
+      clear(out);
+      out.append(status('bad', 'Seed harus angka bulat (maksimal 10 digit).'));
+      return;
+    }
+    const seed = seedRaw ? Number(seedRaw) : crypto.getRandomValues(new Uint32Array(1))[0];
+    let d;
+    try {
+      d = await load();
+    } catch {
+      data = null;
+      clear(out);
+      out.append(status('bad', 'Gagal memuat data wilayah. Coba lagi.'));
+      return;
+    }
+    const r = mulberry32(seed);
+    rows = Array.from({ length: n }, () => fakeOrang(r, d.w, d.kecs));
+    clear(out);
+    out.append(
+      status('ok', `${n} baris, seed ${seed}`),
+      h('table', { class: 'table mt-3 min-w-[64rem] text-sm' },
+        h('thead', null, h('tr', null, ...cols.map(([, label]) => h('th', null, label)))),
+        h('tbody', null, ...rows.map((row) => h('tr', null, ...cols.map(([k]) => h('td', { class: /nik|hp|nitku|tanggal/.test(k) ? 'mono whitespace-nowrap' : undefined }, row[k])))))),
+    );
+    btnJson.disabled = btnCsv.disabled = false;
+  }
+
+  bindCopy(btnJson, () => JSON.stringify(rows, null, 2));
+  bindCopy(btnCsv, () => toCsv(rows));
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    generate();
+  });
+  generate();
+</script>

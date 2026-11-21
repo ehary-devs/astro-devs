@@ -8,7 +8,7 @@ export type NavLink = { label: string; href: string; icon?: string };
 export const site = {
   name: 'devs.web.id',
   description:
-    'Tools gratis untuk developer Indonesia: decoder QRIS, cek format NIK dan NPWP, nomor HP, terbilang, API hari libur, dan API kode wilayah. Semua diproses di browser.',
+    'Tools gratis untuk developer Indonesia: decoder QRIS, cek format NIK, NPWP, dan NITKU, nomor HP, terbilang, generator data uji, API hari libur, kode wilayah, dan zona waktu. Semua diproses di browser.',
   themeColor: '#ffffff',
   author: { name: 'ehary.id', href: 'https://ehary.id' },
 
@@ -40,9 +40,11 @@ export type Tool = {
 export const tools: Tool[] = [
   { slug: 'qris', name: 'Decoder QRIS', desc: 'Bongkar string QRIS per tag, cek CRC, dan ubah QR statis jadi dinamis dengan nominal.', runs: 'browser', icon: 'qrcode', tags: ['EMVCo', 'CRC-16', 'TLV'] },
   { slug: 'nik', name: 'Cek format NIK', desc: 'Baca kode wilayah, tanggal lahir, dan jenis kelamin dari 16 digit NIK.', runs: 'browser', icon: 'id', tags: ['PP 40/2019', 'Wilayah'] },
-  { slug: 'npwp', name: 'Cek format NPWP', desc: 'Kenali NPWP 15 dan 16 digit, lengkap dengan konversi ke format baru.', runs: 'browser', icon: 'receipt-tax', tags: ['PMK 112/2022', '16 digit'] },
+  { slug: 'npwp', name: 'Cek format NPWP', desc: 'Kenali NPWP 15 dan 16 digit serta NITKU 22 digit, lengkap dengan konversi ke format baru.', runs: 'browser', icon: 'receipt-tax', tags: ['PMK 112/2022', 'NITKU'] },
   { slug: 'nomor-hp', name: 'Cek nomor HP', desc: 'Validasi nomor Indonesia, jenis nomor, operator, dan format E.164.', runs: 'browser', icon: 'device-mobile', tags: ['E.164', 'Operator', 'wa.me'] },
   { slug: 'terbilang', name: 'Terbilang rupiah', desc: 'Ubah angka jadi kata sesuai EYD V, plus fungsi siap salin untuk JS, PHP, dan Python.', runs: 'browser', icon: 'abc', tags: ['EYD V', 'JS', 'PHP', 'Python'] },
+  { slug: 'data-uji', name: 'Generator data uji', desc: 'Data dummy NIK, NPWP, NITKU, dan nomor HP yang lolos validasi format, ekspor JSON atau CSV.', runs: 'browser', icon: 'dice-5', tags: ['Seeding', 'JSON', 'CSV'] },
   { slug: 'hari-libur', name: 'Hari libur nasional', desc: 'Libur dan cuti bersama dari SKB 3 Menteri, dalam JSON dan kalender .ics.', runs: 'api', icon: 'calendar-event', tags: ['JSON', '.ics', 'SKB'] },
   { slug: 'wilayah', name: 'Kode wilayah', desc: 'Provinsi sampai desa sesuai Kepmendagri 2025, sebagai JSON statis.', runs: 'api', icon: 'map-pin', tags: ['JSON', 'Kepmendagri'] },
+  { slug: 'zona-waktu', name: 'Zona waktu per provinsi', desc: 'WIB, WITA, WIT untuk 38 provinsi dengan offset UTC dan nama zona IANA.', runs: 'api', icon: 'clock', tags: ['Keppres 41/1987', 'IANA', 'JSON'] },
 ];

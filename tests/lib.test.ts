@@ -216,3 +216,96 @@ test('maskNpwp: pola 15 digit, 16 digit per 4, tetap lolos validateNpwp', () => 
   assert.ok(validateNpwp(maskNpwp('012345678901000')).valid);
   assert.ok(validateNpwp(maskNpwp('0012345678901000')).valid);
 });
+
+// --- NITKU (contoh dari lampiran PER-6/PJ/2024) ---
+import { detect } from '../src/lib/detect.ts';
+
+test('nitku 22 digit', () => {
+  const pusat = validateNpwp('0123456789072000000000');
+  assert.equal(pusat.valid, true);
+  assert.equal(pusat.type, 'NITKU 22 digit (pusat)');
+  assert.equal(pusat.formatted, '0123456789072000 000000');
+  assert.equal(validateNpwp('0123456789072000000001').type, 'NITKU 22 digit (cabang)');
+  assert.equal(validateNpwp('3111111111111111000000').type, 'NITKU 22 digit (pusat)');
+  assert.ok(validateNpwp('3111111111111111000001').checks.some((c) => c.message.includes('ke-1 (cabang)')));
+  assert.equal(validateNpwp('01234567890720000000').valid, false); // 20 digit
+});
+
+test('maskNpwp 22 digit + detect', () => {
+  assert.equal(maskNpwp('01234567890720000'), '0123 4567 8907 2000 0');
+  assert.equal(maskNpwp('0123456789072000000000999'), '0123 4567 8907 2000 000000');
+  assert.equal(validateNpwp(maskNpwp('3111111111111111000001')).valid, true);
+  assert.equal(detect('0123 4567 8907 2000 000000'), 'npwp');
+});
+
+// --- Zona waktu ---
+import { zonaOf } from '../src/lib/zona.ts';
+import { readFileSync } from 'node:fs';
+
+const provinsi = readFileSync(new URL('../data/wilayah.csv', import.meta.url), 'utf8').split('\n').filter((l) => /^\d\d,/.test(l)).map((l) => l.slice(0, 2));
+
+test('zona: semua 38 provinsi terpetakan (provinsi baru di data = tes gagal)', () => {
+  assert.equal(provinsi.length, 38);
+  const count = { WIB: 0, WITA: 0, WIT: 0 };
+  for (const p of provinsi) {
+    const z = zonaOf(p);
+    assert.ok(z, `provinsi ${p} belum punya zona`);
+    count[z.zona]++;
+  }
+  assert.deepEqual(count, { WIB: 18, WITA: 12, WIT: 8 });
+  assert.equal(zonaOf('61')?.iana, 'Asia/Pontianak');
+  assert.equal(zonaOf('3374011708900001')?.zona, 'WIB');
+  assert.equal(zonaOf('51.71')?.zona, 'WITA'); // Bali
+  assert.equal(zonaOf('65')?.zona, 'WITA'); // Kaltara
+  assert.equal(zonaOf('96')?.zona, 'WIT'); // Papua Barat Daya
+  assert.equal(zonaOf('99'), null);
+});
+
+// --- Generator data uji ---
+import { fakeOrang, kecamatanOf, mulberry32, toCsv } from '../src/lib/datauji.ts';
+import { operatorOf } from '../src/lib/phone.ts';
+
+const wilayahNik = Object.fromEntries(
+  readFileSync(new URL('../data/wilayah.csv', import.meta.url), 'utf8')
+    .split('\n')
+    .slice(1)
+    .map((l) => l.split(/,(.*)/s))
+    .filter(([k]) => k && k.split('.').length <= 3)
+    .map(([k, v]) => [k, v.replace(/^"|"$/g, '')]),
+);
+
+test('data uji: setiap baris lolos validator NIK, NPWP, NITKU, HP', () => {
+  const kecs = kecamatanOf(wilayahNik);
+  assert.equal(kecs.length, 7285);
+  const r = mulberry32(42);
+  for (let i = 0; i < 2000; i++) {
+    const o = fakeOrang(r, wilayahNik, kecs, today);
+    const nik = validateNik(o.nik, wilayahNik, today);
+    assert.equal(nik.valid, true, o.nik);
+    assert.ok(!nik.checks.some((c) => c.level !== 'info'), o.nik);
+    const [y, m, d] = o.tanggal_lahir.split('-');
+    assert.equal(nik.segments.find((s) => s.label === 'Tanggal lahir')!.meaning.slice(0, 10), `${d}-${m}-${y}`, o.nik);
+    assert.equal(nik.segments.find((s) => s.label === 'Jenis kelamin')!.meaning.startsWith(o.jenis_kelamin === 'P' ? 'Perempuan' : 'Laki'), true);
+    const age = today.getUTCFullYear() - Number(y);
+    assert.ok(age >= 17 && age <= 70);
+    assert.equal(validateNpwp(o.npwp).type, 'NPWP 16 digit (NIK)');
+    assert.equal(validateNpwp(o.nitku).type, 'NITKU 22 digit (pusat)');
+    const hp = checkPhone(o.hp);
+    assert.equal(hp.valid, true, o.hp);
+    assert.equal(hp.type, 'Seluler', o.hp);
+    assert.equal(operatorOf(o.hp)?.brand, o.operator);
+    assert.ok(o.kecamatan && o.kabupaten && o.provinsi && o.zona_waktu);
+  }
+});
+
+test('data uji: seed sama = hasil sama', () => {
+  const kecs = kecamatanOf(wilayahNik);
+  const a = fakeOrang(mulberry32(7), wilayahNik, kecs, today);
+  const b = fakeOrang(mulberry32(7), wilayahNik, kecs, today);
+  assert.deepEqual(a, b);
+});
+
+test('toCsv escape', () => {
+  assert.equal(toCsv([{ a: '1', b: 'x,y' }, { a: 'say "hi"', b: '' }]), 'a,b\n1,"x,y"\n"say ""hi""",');
+  assert.equal(toCsv([]), '');
+});

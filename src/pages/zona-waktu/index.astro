@@ -1,0 +1,99 @@
+---
+import Tool from '../../layouts/Tool.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import { PROVINSI } from '../../data/provinsi';
+import { zonaOf } from '../../lib/zona';
+import js from '../../snippets/zona.js?raw';
+
+const rows = PROVINSI.map((p) => ({ ...p, ...zonaOf(p.kode)! }));
+const zones = [
+  { zona: 'WIB', nama: 'Waktu Indonesia Barat', utc: '+07:00', tolok: '105° BT', iana: 'Asia/Jakarta' },
+  { zona: 'WITA', nama: 'Waktu Indonesia Tengah', utc: '+08:00', tolok: '120° BT', iana: 'Asia/Makassar' },
+  { zona: 'WIT', nama: 'Waktu Indonesia Timur', utc: '+09:00', tolok: '135° BT', iana: 'Asia/Jayapura' },
+].map((z) => ({ ...z, jumlah: rows.filter((r) => r.zona === z.zona).length }));
+---
+
+<Tool
+  slug="zona-waktu"
+  title="Zona waktu WIB, WITA, WIT per provinsi (38 provinsi) + JSON"
+  description="Pembagian WIB, WITA, dan WIT untuk 38 provinsi sesuai Keppres 41/1987, lengkap dengan offset UTC dan nama zona IANA (Asia/Jakarta, Asia/Makassar, Asia/Jayapura). Tersedia sebagai JSON statis."
+  lead="Tiga wilayah waktu sesuai Keppres 41/1987, dipetakan ke 38 provinsi hasil Kepmendagri 2025. Setiap baris memuat offset UTC dan nama zona IANA yang siap dipakai di kode."
+>
+  <ul class="grid gap-4 sm:grid-cols-3">
+    {
+      zones.map((z) => (
+        <li class="card p-5">
+          <p class="t-eyebrow">{z.nama}</p>
+          <p class="mt-3 text-3xl font-semibold tracking-tight mono" data-clock={z.iana}>--:--</p>
+          <p class="mt-2 text-sm text-ink-2"><span class="mono">UTC{z.utc}</span> · {z.jumlah} provinsi</p>
+          <p class="mt-1 mono text-[0.75rem] text-mute">{z.iana}</p>
+        </li>
+      ))
+    }
+  </ul>
+
+  <section class="mt-16 space-y-5">
+    <h2 class="t-h2">Zona waktu tiap provinsi</h2>
+    <div class="overflow-x-auto">
+      <table class="table min-w-[32rem]">
+        <thead><tr><th>Kode</th><th>Provinsi</th><th>Zona</th><th>IANA</th></tr></thead>
+        <tbody>
+          {
+            rows.map((r) => (
+              <tr>
+                <td class="mono">{r.kode}</td>
+                <td>{r.nama}</td>
+                <td class="mono">{r.zona} <span class="text-mute">({r.utc})</span></td>
+                <td class="mono">{r.iana}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="text-ink-2 max-w-xl">
+      Kalimantan Barat dan Kalimantan Tengah tercatat di database IANA sebagai <code>Asia/Pontianak</code>. Offsetnya
+      sama dengan <code>Asia/Jakarta</code>, yang beda hanya riwayat sebelum 1988.
+    </p>
+  </section>
+
+  <section class="mt-14 space-y-5">
+    <h2 class="t-h2">Pakai di kode</h2>
+    <p class="text-ink-2 max-w-xl">
+      Data lengkap ada di <code>/api/zona-waktu.json</code>. Kalau cukup tahu zona dari kode wilayah atau NIK, salin
+      fungsi ini:
+    </p>
+    <CodeBlock label="JavaScript" code={js} />
+  </section>
+
+  <Fragment slot="aside">
+    <section>
+      <h2 class="t-h3">Dasar aturan</h2>
+      <p class="mt-3 text-ink-2">
+        <a class="link" href="https://peraturan.bpk.go.id/Download/54711/KEPPRES%20NO%2041%20TH%201987.pdf" target="_blank" rel="noopener noreferrer">Keppres No. 41 Tahun 1987</a>
+        Pasal 1, berlaku sejak 1 Januari 1988. WIB bertolok GMT+7 (105° BT), WITA GMT+8 (120° BT), WIT GMT+9 (135° BT).
+      </p>
+    </section>
+    <section>
+      <h2 class="t-h3">Provinsi pemekaran</h2>
+      <p class="mt-3 text-ink-2">
+        Keppres hanya menyebut provinsi yang ada tahun 1987. Provinsi baru mengikuti provinsi induknya: Bangka Belitung
+        dan Kepulauan Riau ikut Sumatera (WIB), Banten ikut Jawa (WIB), Kalimantan Utara ikut Kalimantan Timur (WITA),
+        Gorontalo dan Sulawesi Barat ikut Sulawesi (WITA), Maluku Utara dan enam provinsi Papua ikut WIT.
+      </p>
+    </section>
+  </Fragment>
+</Tool>
+
+<script>
+  const clocks = [...document.querySelectorAll<HTMLElement>('[data-clock]')].map((el) => ({
+    el,
+    fmt: new Intl.DateTimeFormat('id-ID', { timeZone: el.dataset.clock, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
+  }));
+  const tick = () => {
+    const now = new Date();
+    for (const c of clocks) c.el.textContent = c.fmt.format(now);
+  };
+  tick();
+  setInterval(tick, 1000);
+</script>
