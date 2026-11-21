@@ -1,0 +1,130 @@
+---
+import Tool from '../../layouts/Tool.astro';
+import Icon from '../../components/Icon.astro';
+import { PLAT } from '../../data/plat';
+import { KODE_KHUSUS } from '../../lib/plat';
+
+const perpol = 'https://peraturan.go.id/files/bn476-2021.pdf';
+---
+
+<Tool
+  slug="plat-nomor"
+  title="Cek kode plat nomor kendaraan: asal daerah dan jenis kendaraan"
+  description="Baca kode wilayah pelat nomor (TNKB) Indonesia: daerah penomoran, kabupaten/kota yang dicakup, dan alokasi nomor urut per jenis kendaraan sesuai Lampiran Perpol 7/2021. 57 kode wilayah, juga sebagai JSON."
+  lead="Ketik nomor pelat, misalnya B 1234 ABC. Kode wilayah dibaca dari Lampiran A Perpol 7/2021, dan jenis kendaraan diperkirakan dari alokasi nomor urut di Lampiran C."
+>
+  <div class="panel">
+    <form class="max-w-md" novalidate>
+      <label class="label" for="plat-in">Nomor pelat</label>
+      <div class="field-wrap">
+        <Icon name="car" class="field-icon" />
+        <input id="plat-in" class="field text-lg uppercase tracking-wider" maxlength="16" autocomplete="off" spellcheck="false" placeholder="B 1234 ABC" aria-describedby="plat-hint" />
+      </div>
+      <p id="plat-hint" class="t-small mt-2">Spasi boleh ada atau tidak. Huruf kecil otomatis dibaca sebagai huruf besar.</p>
+    </form>
+    <div id="plat-out" class="panel-out space-y-4" aria-live="polite"></div>
+  </div>
+
+  <section class="mt-16 max-w-2xl">
+    <h2 class="t-h2">Struktur nomor pelat</h2>
+    <p class="mt-3 text-ink-2">
+      Menurut Pasal 6 Perpol 7/2021, nomor registrasi kendaraan bermotor (NRKB) terdiri atas kode wilayah atau kode
+      registrasi, nomor urut registrasi berupa 1 sampai 4 angka, dan seri huruf. Kalau nomor dalam satu seri habis,
+      seri huruf berlanjut A sampai Z, lalu dua huruf (AA, AB, ...) dan tiga huruf.
+    </p>
+    <h2 class="t-h2 mt-12">Alokasi nomor urut per jenis kendaraan</h2>
+    <div class="overflow-x-auto">
+      <table class="table mt-5 min-w-[30rem]">
+        <thead><tr><th>Nomor urut</th><th>Umum</th><th>Kode B (Polda Metro Jaya)</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">1-1999</td><td>Mobil penumpang</td><td>Mobil penumpang</td></tr>
+          <tr><td class="mono">2000-2999</td><td>Sepeda motor</td><td>Mobil penumpang</td></tr>
+          <tr><td class="mono">3000-6999</td><td>Sepeda motor</td><td>Sepeda motor</td></tr>
+          <tr><td class="mono">7000-7999</td><td>Mobil bus</td><td>Mobil bus</td></tr>
+          <tr><td class="mono">8000-8999</td><td>Mobil barang</td><td>Mobil penumpang</td></tr>
+          <tr><td class="mono">9000-9999</td><td>Kendaraan khusus</td><td>Mobil barang dan kendaraan khusus</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-3 t-small">Sumber: Lampiran C angka 1 dan 2. Kendaraan yang terdaftar sebelum aturan ini, atau memakai nomor pilihan, bisa tidak mengikuti alokasi ini.</p>
+  </section>
+
+  <section class="mt-14 space-y-5">
+    <h2 class="t-h2">Semua kode wilayah ({PLAT.length})</h2>
+    <div class="overflow-x-auto">
+      <table class="table min-w-[36rem]">
+        <thead><tr><th>Kode</th><th>Daerah</th><th>Lingkup wilayah (sesuai lampiran)</th></tr></thead>
+        <tbody>
+          {
+            PLAT.map((p) => (
+              <tr id={`kode-${p.kode}`}>
+                <td class="mono font-semibold">{p.kode}</td>
+                <td class="whitespace-nowrap">{p.daerah}</td>
+                <td class="text-ink-2">{p.lingkup.join(', ')}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <h3 class="t-h3 mt-8">Kode registrasi khusus (Lampiran B)</h3>
+    <table class="table">
+      <tbody>
+        {Object.entries(KODE_KHUSUS).map(([k, v]) => <tr><td class="mono font-semibold w-20">{k}</td><td>{v}</td></tr>)}
+      </tbody>
+    </table>
+    <p class="text-ink-2 max-w-xl">
+      Data lengkap ada di <code>/api/plat-nomor.json</code>: <code>{'[{ kode, daerah, lingkup: [...] }]'}</code>.
+    </p>
+  </section>
+
+  <Fragment slot="aside">
+    <section>
+      <h2 class="t-h3">Dasar aturan</h2>
+      <p class="mt-3 text-ink-2">
+        <a class="link" href={perpol} target="_blank" rel="noopener noreferrer">Peraturan Kepolisian No. 7 Tahun 2021</a>
+        tentang Registrasi dan Identifikasi Kendaraan Bermotor (BN 2021 No. 476), Pasal 6 dan Lampiran A-C.
+      </p>
+    </section>
+    <section>
+      <h2 class="t-h3">Catatan Papua</h2>
+      <p class="mt-3 text-ink-2">
+        Lampiran disusun sebelum pemekaran Papua tahun 2022, jadi kabupaten di empat provinsi baru masih tercatat di bawah
+        kode PA dan PB. Berita menyebut kode baru seperti PY, PS, dan PT, tetapi teks peraturannya belum kami temukan, jadi
+        kode itu belum dimasukkan.
+      </p>
+    </section>
+    <section>
+      <h2 class="t-h3">Yang tidak dicek</h2>
+      <p class="mt-3 text-ink-2">
+        Ini membaca format, bukan cek data registrasi atau pajak kendaraan. Huruf seri tidak dipetakan ke kabupaten/kota
+        karena tidak diatur di Perpol. Nama wilayah ditulis persis seperti lampiran, termasuk ejaan dan nama lama.
+      </p>
+    </section>
+  </Fragment>
+</Tool>
+
+<script>
+  import { parsePlat } from '../../lib/plat';
+  import { h, clear, status, kv } from '../../lib/dom';
+
+  const input = document.querySelector<HTMLInputElement>('#plat-in')!;
+  const out = document.querySelector<HTMLElement>('#plat-out')!;
+
+  input.addEventListener('input', () => {
+    clear(out);
+    if (!input.value.trim()) return;
+    const r = parsePlat(input.value);
+    out.append(status(r.valid ? 'ok' : 'bad', r.valid ? `Format pelat valid: ${r.plat}` : 'Format pelat tidak valid'));
+    if (r.valid) {
+      const rows: [string, string][] = [['Kode', r.kode!]];
+      if (r.wilayah) rows.push(['Daerah penomoran', r.wilayah.daerah]);
+      if (r.khusus) rows.push(['Kode khusus', r.khusus]);
+      rows.push(['Nomor urut', r.nomor!], ['Seri huruf', r.seri || '(tanpa seri)']);
+      if (r.jenis) rows.push(['Alokasi nomor', r.jenis]);
+      out.append(kv(rows));
+      if (r.wilayah) out.append(h('p', { class: 'text-sm text-ink-2' }, `Lingkup wilayah: ${r.wilayah.lingkup.join(', ')}.`));
+    }
+    out.append(h('ul', { class: 'space-y-1 text-sm' }, ...r.checks.map((c) => h('li', { class: c.level === 'error' ? 'is-bad' : c.level === 'warning' ? 'is-warn' : 'is-info' }, c.message))));
+  });
+</script>
