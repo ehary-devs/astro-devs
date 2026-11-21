@@ -23,6 +23,10 @@
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=86400
 
+/api/plat-nomor.json
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=86400
+
 /api/zona-waktu.json
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=86400

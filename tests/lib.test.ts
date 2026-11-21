@@ -309,3 +309,55 @@ test('toCsv escape', () => {
   assert.equal(toCsv([{ a: '1', b: 'x,y' }, { a: 'say "hi"', b: '' }]), 'a,b\n1,"x,y"\n"say ""hi""",');
   assert.equal(toCsv([]), '');
 });
+
+// --- Plat nomor (Perpol 7/2021) ---
+import { parsePlat, jenisDariNomor } from '../src/lib/plat.ts';
+import { PLAT } from '../src/data/plat.ts';
+
+test('plat: data lampiran A utuh', () => {
+  assert.equal(PLAT.length, 57);
+  assert.equal(new Set(PLAT.map((p) => p.kode)).size, 57);
+  assert.equal(PLAT.reduce((n, p) => n + p.lingkup.length, 0), 501);
+  assert.equal(new Set(PLAT.map((p) => p.daerah)).size, 34); // 34 provinsi saat Perpol terbit
+  const by = (k: string) => PLAT.find((p) => p.kode === k)!;
+  assert.deepEqual(by('L').lingkup, ['Kodya Surabaya']);
+  assert.equal(by('B').lingkup.length, 7);
+  assert.ok(by('B').lingkup.includes('Kota Depok'));
+  assert.ok(by('A').lingkup.includes('Kab. Tangerang'));
+  assert.equal(by('BB').lingkup.length, 19);
+  assert.equal(by('PA').lingkup.length, 29);
+  assert.equal(by('BG').lingkup.at(-1), 'Kab. Penukal Abab Lematang Ilir (PALI)'); // baris terlipat digabung
+  assert.equal(by('DL').lingkup.at(-1), 'Kab. Kep. Siau Tagulandang Biaro');
+  for (const p of PLAT) for (const w of p.lingkup) assert.match(w, /^(Kab\. |Kota\.? |Kodya |Kotamadya |Daerah Khusus)/, `${p.kode}: ${w}`);
+});
+
+test('plat: parse', () => {
+  const r = parsePlat('b 1234 abc');
+  assert.equal(r.valid, true);
+  assert.equal(r.plat, 'B 1234 ABC');
+  assert.equal(r.wilayah?.daerah, 'DKI Jakarta');
+  assert.equal(r.jenis, 'Mobil penumpang'); // kode B: 1-2999
+  assert.equal(parsePlat('H1A').jenis, 'Mobil penumpang');
+  assert.equal(parsePlat('AB 2345 XY').jenis, 'Sepeda motor');
+  assert.equal(parsePlat('DK 8123').jenis, 'Mobil barang');
+  assert.equal(parsePlat('L 9001 ZZZ').jenis, 'Kendaraan khusus');
+  assert.equal(parsePlat('RI 1').khusus?.startsWith('Dinas Presiden'), true);
+  assert.equal(parsePlat('XX 123').valid, false); // kode tidak ada
+  assert.equal(parsePlat('B 0123 A').valid, false); // diawali 0
+  assert.equal(parsePlat('B 12345').valid, false);
+  assert.equal(parsePlat('B 12 ABCD').valid, false);
+  assert.equal(parsePlat('1234').valid, false);
+});
+
+test('plat: alokasi nomor lampiran C', () => {
+  assert.deepEqual([1999, 2000, 6999, 7000, 8000, 9999].map((n) => jenisDariNomor('D', n)), ['Mobil penumpang', 'Sepeda motor', 'Sepeda motor', 'Mobil bus', 'Mobil barang', 'Kendaraan khusus']);
+  assert.deepEqual([2999, 3000, 8500, 9000].map((n) => jenisDariNomor('B', n)), ['Mobil penumpang', 'Sepeda motor', 'Mobil penumpang', 'Mobil barang dan kendaraan khusus']);
+});
+
+test('detect plat tidak mengganggu angka', () => {
+  assert.equal(detect('B 1234 ABC'), 'plat');
+  assert.equal(detect('ab2345xy'), 'plat');
+  assert.equal(detect('Rp 100'), 'number');
+  assert.equal(detect('Rp100'), 'number');
+  assert.equal(detect('halo'), 'unknown');
+});
